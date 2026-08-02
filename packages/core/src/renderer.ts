@@ -4,7 +4,7 @@
 // Zero dependencies on the rest of this repo by design — see palette.ts for
 // why (this package is meant to be extracted into a standalone package).
 
-import type { ShaderDef } from "./types";
+import type { RendererOptions } from "./types";
 import { buildPaletteRamp } from "./palette";
 
 /**
@@ -127,13 +127,7 @@ export type Renderer = {
   dispose(): void;
 };
 
-export function createRenderer(opts: {
-  canvas: HTMLCanvasElement;
-  shader: ShaderDef;
-  colors: string[];
-  params: Record<string, number>;
-  seed: number;
-}): Renderer {
+export function createRenderer(opts: RendererOptions): Renderer {
   const { canvas, shader } = opts;
   let colors = opts.colors;
   let params = opts.params;
