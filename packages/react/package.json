@@ -1,0 +1,32 @@
+{
+  "name": "@instantshader/react",
+  "version": "0.0.0",
+  "description": "React bindings for InstantShader animated WebGL gradients.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/instantgradient/instantshader.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://instantgradient.com/shaders",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "keywords": ["webgl", "shader", "gradient", "mesh-gradient", "animated-gradient", "react"],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "lint:pkg": "publint && attw --pack . --profile esm-only"
+  },
+  "dependencies": {
+    "instantshader": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  }
+}
