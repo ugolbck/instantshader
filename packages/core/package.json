@@ -1,0 +1,25 @@
+{
+  "name": "instantshader",
+  "version": "0.0.0",
+  "description": "Animated WebGL gradient shaders. Zero dependencies.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/instantgradient/instantshader.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://instantgradient.com/shaders",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "keywords": ["webgl", "shader", "gradient", "mesh-gradient", "animated-gradient", "background"],
+  "scripts": {
+    "build": "tsdown",
+    "test": "vitest run",
+    "lint:pkg": "publint && attw --pack . --profile esm-only"
+  }
+}

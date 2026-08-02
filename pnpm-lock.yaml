@@ -33,6 +33,8 @@ importers:
         specifier: ^4.0.0
         version: 4.1.10(vite@8.2.0(jiti@2.7.0))
 
+  packages/core: {}
+
 packages:
 
   '@andrewbranch/untar.js@1.0.3':
