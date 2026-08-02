@@ -16,6 +16,7 @@ Not yet published to npm.
 
 ```bash
 pnpm i
+pnpm exec playwright install chromium # first time only, for core's browser tests
 pnpm build
 pnpm test
 pnpm playground
