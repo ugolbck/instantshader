@@ -1,10 +1,11 @@
-# DORMANT until first manual publish:
+# DORMANT until first manual publish. To activate:
 #   (1) npm publish both packages once by hand,
 #   (2) configure npm Trusted Publisher (owner/repo/release.yml) on npmjs.com
 #       for each,
-#   (3) ensure npm CLI >= 11.5.1 in this workflow.
-# Until then this workflow only opens Version Packages PRs, publish step
-# fails harmlessly without npm auth.
+#   (3) ensure npm CLI >= 11.5.1 in this workflow,
+#   (4) set repository variable RELEASE_ENABLED=true
+#       (GitHub repo Settings > Secrets and variables > Actions > Variables).
+# Until then the job is skipped entirely.
 
 name: Release
 
@@ -19,6 +20,7 @@ permissions:
 
 jobs:
   release:
+    if: vars.RELEASE_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
