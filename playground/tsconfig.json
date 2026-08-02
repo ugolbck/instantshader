@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "isolatedDeclarations": false,
+    "noEmit": true
+  },
+  "include": ["src"]
+}

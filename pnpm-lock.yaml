@@ -65,6 +65,37 @@ importers:
         specifier: ^18 || ^19
         version: 19.2.8(react@19.2.8)
 
+  playground:
+    dependencies:
+      '@instantshader/react':
+        specifier: workspace:*
+        version: link:../packages/react
+      instantshader:
+        specifier: workspace:*
+        version: link:../packages/core
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.4(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.0
+        version: 6.0.5(vite@8.2.0(jiti@2.7.0))
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vite:
+        specifier: ^8.0.0
+        version: 8.2.0(jiti@2.7.0)
+
 packages:
 
   '@andrewbranch/untar.js@1.0.3':

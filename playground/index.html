@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>instantshader-playground</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #0a0a0a;
+        color: #e5e5e5;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      main {
+        min-height: 100vh;
+        padding: 2.5rem 1.5rem;
+      }
+      .header {
+        max-width: 1600px;
+        margin: 0 auto 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1.25rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin: 0 0 0.5rem;
+      }
+      .sub {
+        font-size: 0.875rem;
+        color: #a3a3a3;
+        margin: 0;
+      }
+      kbd {
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+        border: 1px solid #333;
+        background: #1a1a1a;
+        font-family: ui-monospace, monospace;
+        font-size: 0.6875rem;
+      }
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        font-family: ui-monospace, monospace;
+      }
+      .nav a {
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #333;
+        color: #a3a3a3;
+        text-decoration: none;
+      }
+      .nav a.active {
+        border-color: #e5e5e5;
+        background: #e5e5e5;
+        color: #0a0a0a;
+      }
+      .nav .sep {
+        margin: 0 0.25rem;
+        color: #333;
+      }
+      .grid {
+        max-width: 1600px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+      }
+      figure {
+        margin: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #262626;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+      }
+      figure .canvas-wrap {
+        position: relative;
+        aspect-ratio: 4 / 3;
+      }
+      figure .canvas-wrap canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      figcaption {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.6875rem;
+        font-family: ui-monospace, monospace;
+        color: #a3a3a3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
