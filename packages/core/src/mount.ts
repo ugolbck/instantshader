@@ -6,9 +6,10 @@ import { resolveParams } from "./params";
  * Mounts a live, animated gradient into `container` and returns a handle to
  * control it. Owns a canvas (sized to the container via ResizeObserver, DPR
  * capped at 2 to bound fill-rate cost on high-density displays) and a RAF
- * loop that runs ONLY while playing — matching
- * lib/editor/providers/silk/index.tsx:88-103, which returns early instead of
- * re-queuing requestAnimationFrame while paused/frozen. pause() cancels the
+ * loop that runs ONLY while playing — the same lifecycle used by the
+ * InstantGradient app's canvas preview, which stops scheduling
+ * requestAnimationFrame entirely while paused/frozen rather than continuing
+ * to tick with no-op frames. pause() cancels the
  * in-flight frame and freezes `clockMs`; resume() restarts the loop from
  * there. Since the loop is fully stopped while paused, setColors/setParams/
  * seek/resize (via the ResizeObserver) each trigger a single on-demand

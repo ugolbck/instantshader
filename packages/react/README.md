@@ -8,7 +8,7 @@ component into any sized wrapper to mount a live, animated gradient. Built by
 ## Install
 
 ```bash
-npm install @instantshader/react instantshader
+npm install @instantshader/react
 ```
 
 ## Usage

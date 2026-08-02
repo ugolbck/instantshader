@@ -3,10 +3,10 @@
 // function, so all looks share one noise "fingerprint" and bugs only need
 // fixing in one place.
 //
-// Not every look uses every chunk: SIMPLEX_2D and GRAIN are in all three,
-// but FBM and SHAPE are down to flow alone -- the other shaders were
-// reworked onto single smooth snoise octaves, because summed octaves are
-// exactly what gave them the fine filament detail those reworks existed to
+// Not every look uses every chunk: SIMPLEX_2D and GRAIN are shared by both
+// flow and beam, but FBM and SHAPE are down to flow alone -- beam was
+// reworked onto a single smooth snoise octave, because summed octaves are
+// exactly what gave it the fine filament detail that rework existed to
 // remove.
 //
 // IMPORTANT float-precision note: snoise's internal floor() can't tell
@@ -18,11 +18,11 @@
 // the result small too.
 
 /**
- * 2D simplex noise, copied VERBATIM from
- * lib/editor/providers/customMesh/shader.ts (Ashima Arts / Ian McEwan,
- * public domain). Do not hand-edit the constants below -- they are fitted
- * values for the simplex lattice skew/unskew and permutation polynomial,
- * not numbers you can derive or "clean up".
+ * 2D simplex noise, copied VERBATIM from the standard reference
+ * implementation (Ashima Arts / Ian McEwan, public domain). Do not hand-edit
+ * the constants below -- they are fitted values for the simplex lattice
+ * skew/unskew and permutation polynomial, not numbers you can derive or
+ * "clean up".
  */
 export const SIMPLEX_2D = `
 vec3 mod289_3(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -133,12 +133,11 @@ float spread(float x, float sd) {
  * based. Grain needs to look like uncorrelated static at the pixel level;
  * a band-limited noise function like snoise would need an impractically
  * huge input scale to look that fine-grained, which would push it right
- * back into the float-precision dead zone described above. Matches the
- * hash used for the same purpose in
- * lib/gradient/export/gradflowFrameRenderer.ts:65 (`noise(vec2)`). `time`
- * is folded into the hash input (not just added as a phase) so the grain
- * pattern itself re-randomizes every frame instead of sitting static on
- * top of a moving gradient.
+ * back into the float-precision dead zone described above. Matches the same
+ * hash-based grain technique used for this purpose in the InstantGradient
+ * app (origin repo). `time` is folded into the hash input (not just added
+ * as a phase) so the grain pattern itself re-randomizes every frame instead
+ * of sitting static on top of a moving gradient.
  */
 export const GRAIN = `
 float grain(vec2 uv, float time) {

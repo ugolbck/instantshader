@@ -1,7 +1,7 @@
 // Fixed palette banks for the meshkit lab grid. Hardcoded (not generated) so
-// screenshot sweeps are deterministic across runs -- see paletteGenerator.ts
-// for the strategies these are loosely inspired by (mono ramp, analogous,
-// wide-spread, muted neutrals, pastel).
+// screenshot sweeps are deterministic across runs. Loosely inspired by a
+// handful of palette strategies: mono ramp, analogous, wide-spread, muted
+// neutrals, pastel.
 
 export const LAB_PALETTES: { name: string; colors: string[] }[] = [
   { name: "duo-warm", colors: ["#FF6B35", "#FFD166"] },

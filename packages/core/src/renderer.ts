@@ -1,8 +1,8 @@
 // Raw WebGL1 renderer for InstantShader shaders. This file owns every GL call
 // in the kit; everything else (index.ts, shader defs) is GL-agnostic.
 //
-// Zero dependencies on the rest of this repo by design — see palette.ts for
-// why (this package is meant to be extracted into a standalone package).
+// Zero dependencies on anything outside this package by design — see
+// palette.ts for why.
 
 import type { RendererOptions } from "./types";
 import { buildPaletteRamp } from "./palette";

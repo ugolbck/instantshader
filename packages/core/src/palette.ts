@@ -13,10 +13,10 @@
 // sides of the achromatic axis, so the straight line between them passes
 // close to a=b=0 at its midpoint — chroma collapses toward zero and the
 // ramp goes gray exactly where it should be at its most saturated. This is
-// not theoretical: the neon-5 lab palette (app/lab/meshkit/palettes.ts) has
-// stops with chroma >= 0.147 everywhere, yet its straight-OKLab ramp bottoms
-// out at chroma 0.001 mid-segment; jewel-6 (stops >= 0.075) bottoms out at
-// 0.005. No shader can recover a color that was never written into the ramp
+// not theoretical: a "neon" palette with stops of chroma >= 0.147 everywhere
+// can still have its straight-OKLab ramp bottom out at chroma 0.001
+// mid-segment; a "jewel-tone" palette (stops >= 0.075) bottoms out at 0.005.
+// No shader can recover a color that was never written into the ramp
 // texture it samples.
 //
 // Interpolating in polar OKLCh fixes this by giving chroma its own
@@ -27,9 +27,9 @@
 // straight line dragging both through zero. See lerpHue() below for the
 // wraparound/achromatic-endpoint handling this requires.
 //
-// This file is copy-pasted math, not an import, on purpose: lib/instantshader
-// must have zero dependencies on the rest of this repo so it can be
-// extracted into a standalone open-source package later.
+// This file implements its own color math rather than importing it, on
+// purpose: instantshader ships with zero dependencies, so its math stays
+// self-contained instead of pulling in an external color library.
 
 /** Number of texels in the output ramp. Matches a typical 1D LUT texture size:
  * large enough that per-texel banding is invisible, small enough to upload
@@ -52,7 +52,7 @@ function delinearize(c: number): number {
 
 /**
  * sRGB -> OKLab, Björn Ottosson's method (https://bottosson.github.io/posts/oklab/).
- * Coefficients copied verbatim from lib/colors/colorMath.ts (rgbToOklab) —
+ * Coefficients copied verbatim from that reference implementation —
  * do not hand-retype these, they are fitted constants, not derivable values.
  *
  * The two 3x3 matrices convert linear sRGB to an LMS-like cone response
@@ -72,8 +72,8 @@ function rgbToOklab(r: number, g: number, b: number): [number, number, number] {
 }
 
 /**
- * OKLab -> sRGB, inverse of rgbToOklab. Coefficients copied verbatim from
- * lib/colors/colorMath.ts (oklabToRgb) — same fitted-constant caveat as above.
+ * OKLab -> sRGB, inverse of rgbToOklab. Same fitted-constant caveat as
+ * above — do not hand-retype these coefficients.
  */
 function oklabToRgb(L: number, a: number, b: number): [number, number, number] {
   const l_ = L + 0.3963377774 * a + 0.2158037573 * b;

@@ -5,13 +5,13 @@
 // never looks like it's leaking out of or pooling into one spot, which is
 // what makes it read as continuous currents rather than random jitter.
 //
-// Against the other two looks: beam (in its first, pre-rework form) was diffuse and radial (soft lobes
-// breathing out of a glow core, no defined edges anywhere), ribbons runs a
-// directional sweep with lit folds, and flow is the one with CURRENTS -- big
-// isotropic swirls with defined luminous edges and generous calm negative
-// space. Its two defining settings are the curl field being
-// coarser than the colour masses it carries, and `openness` widening the
-// palette's first colour into that calm.
+// Against beam: beam (in its first, pre-rework form) was diffuse and radial
+// (soft lobes breathing out of a glow core, no defined edges anywhere),
+// while flow is the one with CURRENTS -- big isotropic swirls with defined
+// luminous edges and generous calm negative space. Its two defining
+// settings are the curl field being coarser than the colour masses it
+// carries, and `openness` widening the palette's first colour into that
+// calm.
 
 import type { ShaderDef } from "../types";
 import { SIMPLEX_2D, FBM, SHAPE, GRAIN } from "./noise";
@@ -44,12 +44,13 @@ vec2 curl(vec2 p) {
 
 void main() {
   vec2 uv = worldUv();
-  // Slow crawl so currents read as continuous, not jittery. Half the rate the
-  // other two looks use, because this one has leverage: the drift only enters
-  // the curl coordinate, and rotating the advection field moves the sampled
-  // point much further than nudging an fbm coordinate directly would. At 0.05
-  // (matching ribbons) the whole composition reorganized every ~3 seconds,
-  // measured as more pixel change over 3.5s than the beam prototype showed over 7.5s.
+  // Slow crawl so currents read as continuous, not jittery. Half the rate an
+  // earlier prototype of this shader used, because this one has leverage: the
+  // drift only enters the curl coordinate, and rotating the advection field
+  // moves the sampled point much further than nudging an fbm coordinate
+  // directly would. At 0.05 (that earlier prototype's rate) the whole
+  // composition reorganized every ~3 seconds, measured as more pixel change
+  // over 3.5s than the beam prototype showed over 7.5s.
   float drift = u_time * 0.025;
 
   // Advect the sample point along the curl field in 3 FIXED steps (written

@@ -1,10 +1,10 @@
 "use client";
 
-// Mirrors the mount lifecycle of lib/editor/providers/kit/createKitProvider.tsx's
-// Preview component in the InstantGradient app (read-only reference, not
-// imported from here): remount only on shader/seed change, everything else
-// (colors/params/speed/paused) pushed through the MountHandle in its own
-// effect so object-identity churn on `params` doesn't tear down the canvas.
+// Mirrors the mount lifecycle used by the InstantGradient app (origin repo)
+// for its own live preview: remount only on shader/seed change, everything
+// else (colors/params/speed/paused) pushed through the MountHandle in its
+// own effect so object-identity churn on `params` doesn't tear down the
+// canvas.
 
 import { useEffect, useMemo, useRef } from "react";
 import type { CSSProperties, ReactElement } from "react";
@@ -14,7 +14,19 @@ import type { MountHandle, ShaderDef } from "instantshader";
 export interface ShaderCanvasProps {
   shader: ShaderDef;
   colors: string[];
+  /**
+   * Merged into the shader's current params (removed/omitted keys are NOT
+   * reset to their default — they keep whatever value was last applied).
+   * Setting this prop back to `undefined` does not revert to defaults
+   * either: the underlying MountHandle is only updated when `params` is
+   * truthy, so the last applied values simply stick.
+   */
   params?: Record<string, number>;
+  /**
+   * Setting this prop back to `undefined` does NOT revert playback to the
+   * default speed — the underlying MountHandle is only updated when `speed`
+   * is not `undefined`, so whatever speed was last applied keeps playing.
+   */
   speed?: number;
   seed?: number;
   paused?: boolean;

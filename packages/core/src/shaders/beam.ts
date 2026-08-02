@@ -61,8 +61,8 @@ void main() {
 
   // ---- isotropic beam frame ---------------------------------------------
   // worldUv() is 0-1 on BOTH axes of a 1000x562.5 world, so one uv unit of x
-  // is 1.78x more screen distance than one of y. flow/ribbons can ignore
-  // that (noise fields and full-frame sweeps don't care), but a BEAM cannot:
+  // is 1.78x more screen distance than one of y. flow can ignore that (a
+  // noise field filling the whole frame doesn't care), but a BEAM cannot:
   // sampled in raw uv, a vertical beam renders 1.78x thinner than a
   // horizontal one at the same u_width, and the angle param would double as
   // a hidden thickness control. Scaling x by the world aspect makes the

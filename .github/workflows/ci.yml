@@ -28,3 +28,11 @@ jobs:
       - run: pnpm test
 
       - run: pnpm lint:pkg
+
+      - name: npm pack --dry-run (core)
+        working-directory: packages/core
+        run: npm pack --dry-run
+
+      - name: npm pack --dry-run (react)
+        working-directory: packages/react
+        run: npm pack --dry-run
