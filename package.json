@@ -1,0 +1,23 @@
+{
+  "name": "instantshader-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' build",
+    "test": "pnpm -r --filter './packages/*' test",
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "lint:pkg": "pnpm -r --filter './packages/*' lint:pkg",
+    "playground": "pnpm --filter playground dev",
+    "changeset": "changeset"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.0",
+    "@changesets/cli": "^2.29.0",
+    "publint": "^0.3.0",
+    "tsdown": "^0.15.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.0.0",
+    "@vitest/browser": "^4.0.0",
+    "playwright": "^1.56.0"
+  }
+}
