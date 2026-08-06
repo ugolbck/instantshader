@@ -1,11 +1,21 @@
-# DORMANT until first manual publish. To activate:
-#   (1) npm publish both packages once by hand,
-#   (2) configure npm Trusted Publisher (owner/repo/release.yml) on npmjs.com
-#       for each,
-#   (3) ensure npm CLI >= 11.5.1 in this workflow,
+# DORMANT until the first manual publish. npm cannot create a package via
+# trusted publishing (npm/cli#8544), so version 0.1.0 of each package must be
+# pushed by hand once. To activate:
+#   (1) create the "instantshader" npm org (needed for @instantshader/react),
+#   (2) from a clean checkout: pnpm build, then in each package dir
+#       `npm publish` (packages carry publishConfig.access=public),
+#   (3) on npmjs.com, for EACH package: Settings > Trusted Publisher >
+#       GitHub Actions, owner `ugolbck`, repo `instantshader`, workflow
+#       filename `release.yml` (filename only, exact case, with extension),
+#       and tick the `npm publish` allowed action -- configs created after
+#       2026-05-20 require an explicit action selection,
 #   (4) set repository variable RELEASE_ENABLED=true
 #       (GitHub repo Settings > Secrets and variables > Actions > Variables).
 # Until then the job is skipped entirely.
+#
+# No NPM_TOKEN anywhere by design: classic tokens were permanently revoked
+# 2025-12-09 and OIDC is the only durable path. Provenance is emitted
+# automatically (public repo + GitHub-hosted runner); no --provenance flag.
 
 name: Release
 
@@ -18,26 +28,41 @@ permissions:
   pull-requests: write
   id-token: write
 
+# Two pushes to main landing together would otherwise race the version PR
+# against the publish.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     if: vars.RELEASE_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      # v7 is the floor for OIDC: earlier versions export a dummy
+      # NODE_AUTH_TOKEN, which makes npm prefer token auth, skip the OIDC
+      # handshake, and fail with a misleading E404 (actions/setup-node#1558).
+      # Deliberately no registry-url and no dependency cache -- release builds
+      # must not restore a cache.
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
 
+      # Node 24 ships npm >= 11.17, clearing the >= 11.5.1 trusted-publishing
+      # floor. Node 22 would ship npm 10.9.8 and fail.
       - run: corepack enable
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm build
 
+      # changesets detects pnpm and shells out to `pnpm publish`, which
+      # forwards to npm and picks up the OIDC credentials from the job.
+      # changesets/action >= 1.7.0 only writes an .npmrc auth line when
+      # NPM_TOKEN is set, so leaving it unset is what keeps OIDC working.
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:
           publish: pnpm changeset publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
