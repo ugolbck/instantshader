@@ -1,6 +1,6 @@
 {
   "name": "instantshader",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Animated WebGL gradient shaders. Zero dependencies.",
   "type": "module",
   "license": "MIT",
