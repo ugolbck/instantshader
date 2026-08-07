@@ -194,7 +194,14 @@ for (const def of shaders) {
           // Grain off: it is an uncorrelated per-pixel hash by design, so it
           // adds a constant floor of change that has nothing to do with
           // whether the underlying motion is continuous.
-          const step = 50;
+          // The step has to stay SMALL relative to how fast the shader is
+          // changing, or every measurement saturates near full decorrelation
+          // and the comparisons below stop discriminating. A fixed step can't
+          // do that: flow ties its travel speed to the loop length (one tile
+          // per cycle), so at a 4s period it moves ~8x faster than at 30s.
+          // Scaling with the period keeps the per-step change roughly
+          // constant; the 16ms floor is one frame at 60fps.
+          const step = Math.max(16, (loopSeconds * 1000) / 600);
           const params = { grain: 0 };
           const stepAt = (timeMs: number) =>
             meanAbsDiff(
@@ -217,14 +224,22 @@ for (const def of shaders) {
           expect(seam).toBeLessThanOrEqual(worstOrdinary * 1.5);
 
           // Positive control — without it the assertion above could pass on a
-          // shader that simply never moves. The SAME comparison with looping
-          // disabled spans a genuine `loopSeconds`-long jump in the animation,
-          // and must register as dramatically worse.
-          const unlooped = meanAbsDiff(
-            fullFrame(def, { timeMs: loopSeconds * 1000 - step, params }),
-            fullFrame(def, { timeMs: 0, params }),
+          // shader that simply never moves. Two frames half a cycle apart are
+          // a genuinely large state difference, and must register as
+          // dramatically worse than a `step`-sized one.
+          //
+          // Deliberately measured INSIDE the looping animation. An earlier
+          // version compared against the non-looping animation instead, which
+          // silently stopped being a fair control once flow tied its travel
+          // speed to the loop length: at a short period the looped animation
+          // moves faster than the unlooped one, so the "big jump" came out
+          // smaller than an ordinary looped step and the control failed on a
+          // perfectly good shader.
+          const halfCycle = meanAbsDiff(
+            fullFrame(def, { timeMs: 0, loopSeconds, params }),
+            fullFrame(def, { timeMs: loopSeconds * 500, loopSeconds, params }),
           );
-          expect(unlooped).toBeGreaterThan(worstOrdinary * 3);
+          expect(halfCycle).toBeGreaterThan(worstOrdinary * 3);
         });
       }
 

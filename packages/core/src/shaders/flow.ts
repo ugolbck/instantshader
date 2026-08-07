@@ -18,6 +18,7 @@ import { SIMPLEX_2D, PERIODIC_2D, FBM, SHAPE, GRAIN } from "./noise";
 
 const FRAGMENT = `
 uniform float u_scale;
+uniform float u_curl;
 uniform float u_drift;
 uniform float u_openness;
 uniform float u_grain;
@@ -62,11 +63,22 @@ void main() {
   // composition reorganized every ~3 seconds, measured as more pixel change
   // over 3.5s than the beam prototype showed over 7.5s.
   //
-  // The curl field is sampled at 0.55x the fbm's frequency (see below), so
-  // the visible frame spans curlScale units of noise. The tile has to be at
-  // least twice that or the field repeats inside a single frame, which looks
-  // like wallpaper; ceil keeps it integral, which pnoise requires.
-  float curlScale = u_scale * 0.55;
+  // Curl field frequency, relative to the fbm's. Below 1.0 the currents are
+  // LARGER than the colour masses they carry, which is the look: sampled at
+  // the same frequency each mass sits inside its own little eddy, the
+  // advection only roughens mass edges, and the result is indistinguishable
+  // from a plain warped fbm.
+  //
+  // u_curl replaces what was a hardcoded 0.55, and its default is 1.05
+  // because the potential is pnoise now. Classic Perlin's lattice is a unit
+  // grid while simplex's skewed cells are roughly 0.7 units, so the same
+  // input scale yields visibly coarser features -- fewer closed eddies. 1.05
+  // was matched by eye against a reference render of the pre-pnoise look.
+  //
+  // The visible frame spans curlScale units of noise, so the tile has to be
+  // at least twice that or the field repeats inside a single frame, which
+  // looks like wallpaper; ceil keeps it integral, which pnoise requires.
+  float curlScale = u_scale * u_curl;
   float tile = max(2.0, ceil(curlScale * 2.0));
 
   // Straight-line travel through a tiling field: the direction never changes,
@@ -90,18 +102,18 @@ void main() {
   // the NUMBER of steps that turns advection into rotation: one step is a
   // plain directional shove, and at two the point still travels an almost
   // straight chord. The third is where it curves enough to close visible
-  // eddies, which is the whole point of the look. Step gain is dropped from
-  // 0.08 to 0.055 to keep the total travel about where it was.
+  // eddies, which is the whole point of the look.
   //
-  // The curl field is sampled at 0.55x the fbm's frequency, i.e. the
-  // currents are deliberately LARGER than the colour masses they carry.
-  // Sampled at the same frequency (as it was) each mass sat inside its own
-  // little eddy, so the advection only roughened mass edges and the result
-  // was indistinguishable from a plain warped fbm.
+  // Step gain 0.19, up from the 0.055 that was tuned against a simplex
+  // potential. pnoise carries shallower gradients, so the old gain advected
+  // the point far too little and the eddies stopped closing -- the frame went
+  // to soft diagonal bands. The gain absorbs that difference rather than the
+  // default of u_drift, which stays at 0.5 in its published 0-1 range so the
+  // knob means the same thing it always did.
   vec2 advected = uv;
-  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.055;
-  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.055;
-  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.055;
+  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.19;
+  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.19;
+  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.19;
 
   float t = fbm2(advected * u_scale + u_seed);
 
@@ -145,6 +157,14 @@ export const flow: ShaderDef = {
   fragment: FRAGMENT,
   params: [
     { key: "scale", label: "Scale", min: 0.6, max: 2.6, step: 0.05, default: 1.7 },
+    // How tight the eddies are. Low values give big lazy currents carrying
+    // whole colour masses; past ~1.0 the curl field is finer than the masses
+    // and the swirl degenerates into edge roughening (see u_curl in the GLSL).
+    { key: "curl", label: "Curl", min: 0.3, max: 1.6, step: 0.05, default: 1.05 },
+    // Advection strength: how far the curl field carries the sample point,
+    // i.e. how pronounced the swirl is. Range and default unchanged from the
+    // published shader -- the pnoise gradient difference is absorbed by the
+    // step gain in the GLSL, not by moving this knob under the caller.
     { key: "drift", label: "Drift", min: 0, max: 1, step: 0.01, default: 0.5 },
     { key: "openness", label: "Openness", min: 0, max: 1, step: 0.01, default: 0.28 },
     { key: "grain", label: "Grain", min: 0, max: 0.3, step: 0.01, default: 0.08 },
@@ -152,7 +172,13 @@ export const flow: ShaderDef = {
   randomParams(rand) {
     return {
       scale: 0.6 + rand() * (2.6 - 0.6),
-      drift: rand() * 1,
+      // Kept off both ends: below 0.6 the currents are too lazy to close an
+      // eddy in frame, above 1.3 they are finer than the colour masses and the
+      // swirl degenerates into edge roughening.
+      curl: 0.6 + rand() * (1.3 - 0.6),
+      // Never 0 -- no swirl at all is not a variation of this look, it is a
+      // different (and much duller) one.
+      drift: 0.25 + rand() * (1 - 0.25),
       openness: rand() * 1,
       // Grain is taste, not variation -- always randomize to the default.
       grain: 0.08,
