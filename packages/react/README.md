@@ -25,3 +25,17 @@ export function Background() {
   );
 }
 ```
+
+## Seamless loops
+
+Pass `loopSeconds` to make the animation repeat exactly, with no visible seam
+at the wrap:
+
+```tsx
+<Flow colors={colors} loopSeconds={30} style={{ width: "100%", height: "100%" }} />
+```
+
+15–60s is the comfortable range, and the period is measured in animation
+seconds (so it interacts with `speed`). See the
+[`instantshader` README](https://www.npmjs.com/package/instantshader) for the
+full details.

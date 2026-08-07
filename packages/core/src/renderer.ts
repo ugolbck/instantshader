@@ -22,11 +22,18 @@ import { buildPaletteRamp } from "./palette";
  * `u_time` and `u_seed` arrive pre-modded (see renderAt below) so that a
  * shader doing `sin(u_time * freq)` never loses float32 precision from a
  * time value that has grown large over a long-running session.
+ *
+ * Two more helpers exist so shaders can be made seamlessly loopable without
+ * each one reinventing the maths — see loopDrift/loopFreq below. Any shader
+ * whose only time dependence goes through those two (plus grain(), which
+ * loops for free because u_time itself wraps at the period) is exactly
+ * periodic with period `u_loop`.
  */
 export const BASE_UNIFORMS = `precision highp float;
 uniform vec2 u_resolution;   // canvas pixels
-uniform float u_time;        // seconds, pre-modded to [0,1000)
+uniform float u_time;        // seconds, pre-modded to [0,1000), or to [0,u_loop) when looping
 uniform float u_seed;        // pre-modded to [0,100)
+uniform float u_loop;        // seconds per seamless cycle; 0 = never repeat
 uniform sampler2D u_palette; // 1024x1 OKLCh-interpolated ramp
 varying vec2 v_uv;           // 0-1 quad UV
 // World-space UV: cover-fit a fixed 1000x562.5 world so pattern density
@@ -41,6 +48,77 @@ vec2 worldUv() {
 }
 vec3 palette(float t) {
   return texture2D(u_palette, vec2(clamp(t, 0.0, 1.0), 0.5)).rgb;
+}
+
+const float TAU = 6.2831853;
+
+// Time-varying offset for a noise sample coordinate.
+//
+// Not looping (u_loop == 0): a plain linear translation, dir * rate * t.
+// This is the arithmetic the shaders used before looping existed, so the
+// default path is bit-identical to the pre-loop renderer.
+//
+// Looping: the same walk, bent into a closed circle of circumference
+// rate * |dir| * u_loop. Because the offset returns to exactly where it
+// started after u_loop seconds, every value derived from it does too --
+// that is the whole loop. A circle (rather than, say, a sine ping-pong on
+// one axis) is what keeps this invisible: the drift DIRECTION rotates
+// smoothly through 360 degrees over the cycle and never reverses, which on
+// an isotropic noise field is indistinguishable from continuing to travel
+// in a straight line. The radius is set from arc length, so the sampled
+// point covers the same distance per second whether looping or not and the
+// animation runs at an identical apparent speed either way.
+//
+// |dir| matters and is easy to get wrong: a shader adding a scalar drift to
+// both components of a vec2 is translating along the diagonal at rate*sqrt(2),
+// not at rate. Passing dir un-normalized lets each call site keep its
+// original speed exactly.
+//
+// Radii stay small (rate 0.05 over a 60s loop gives r ~ 0.48, well under the
+// noise field's ~1-unit feature size), so this never approaches the
+// float-precision ceiling noise.ts warns about.
+vec2 loopDrift(float rate, vec2 dir) {
+  if (u_loop <= 0.0) return dir * (rate * u_time);
+  float phase = TAU * u_time / u_loop;
+  return vec2(cos(phase), sin(phase)) * (rate * length(dir) * u_loop / TAU);
+}
+
+// Straight-line travel that still loops, for shaders sampling a noise field
+// that TILES with period "tile" (see PERIODIC_2D in shaders/noise.ts).
+//
+// This is the better half of loopDrift, and the difference is the whole
+// reason it exists. loopDrift has to curve, because a simplex field never
+// repeats, so the only way back to the start is to come around -- and a
+// drift direction that rotates through 360 degrees per cycle is perceived as
+// the composition swaying back and forth. Against a tiling field the path can
+// stay perfectly straight: travel exactly one tile and the field you are
+// standing in is bit-identical to the one you left. The motion never turns,
+// so it reads as continuous flow.
+//
+// The cost is that speed is no longer free. Travel per cycle is pinned to the
+// tile size, so rate becomes tile/u_loop: a short loop flows fast, a long one
+// slowly. The tile cannot simply be shrunk to compensate, because a tile
+// narrower than the visible frame means the field repeats WITHIN one frame,
+// which is a far worse artifact than any of this. Callers should size it
+// from their own sampling frequency.
+vec2 loopTravel(float rate, vec2 dir, float tile) {
+  if (u_loop <= 0.0) return dir * (rate * u_time);
+  return dir * (tile * u_time / u_loop);
+}
+
+// Snaps an angular frequency to a whole number of cycles per loop, which is
+// what makes sin(loopFreq(w) * u_time + anything) exactly periodic.
+//
+// Rounding to ZERO is deliberate and is the useful case, not a degenerate
+// one: when the loop is shorter than about half the oscillation's natural
+// period, the nearest legal frequency would be far faster than the shader
+// was tuned for, turning a slow swell into a throb. Returning 0 instead
+// freezes the oscillation at its per-pixel phase, so a spatially-varying
+// term stays spatially varying and simply stops animating -- a far less
+// visible change than speeding it up.
+float loopFreq(float w) {
+  if (u_loop <= 0.0) return w;
+  return TAU * floor(w * u_loop / TAU + 0.5) / u_loop;
 }
 `;
 
@@ -123,15 +201,27 @@ export type Renderer = {
   renderAt(timeMs: number): void;
   setColors(colors: string[]): void;
   setParams(params: Record<string, number>): void;
+  /** Sets the seamless-loop period in animation seconds; 0/undefined disables
+   * looping. See RendererOptions.loopSeconds. */
+  setLoopSeconds(seconds: number | undefined): void;
   resize(width: number, height: number): void;
   dispose(): void;
 };
+
+/** Normalizes a loop period to the "off" sentinel the GLSL side expects.
+ * Non-finite and non-positive values all mean "don't loop", so callers can
+ * pass through user input without pre-validating it. */
+function normalizeLoop(seconds: number | undefined): number {
+  if (seconds === undefined || !Number.isFinite(seconds) || seconds <= 0) return 0;
+  return seconds;
+}
 
 export function createRenderer(opts: RendererOptions): Renderer {
   const { canvas, shader } = opts;
   let colors = opts.colors;
   let params = opts.params;
   const seed = opts.seed;
+  let loopSeconds = normalizeLoop(opts.loopSeconds);
 
   const glOrNull = canvas.getContext("webgl", {
     preserveDrawingBuffer: true,
@@ -186,6 +276,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
   const resolutionLoc = gl.getUniformLocation(program, "u_resolution");
   const timeLoc = gl.getUniformLocation(program, "u_time");
   const seedLoc = gl.getUniformLocation(program, "u_seed");
+  const loopLoc = gl.getUniformLocation(program, "u_loop");
   const paletteLoc = gl.getUniformLocation(program, "u_palette");
   // One uniform location per declared param, looked up once at construction
   // rather than on every renderAt() call.
@@ -211,9 +302,19 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // Mod into a small range before handing to the GPU: float32 loses
     // sub-millisecond precision once the raw value climbs into the
     // thousands-of-seconds range a long-running session would reach.
-    const timeSec = floorMod(timeMs / 1000, 1000);
+    //
+    // When looping, mod by the PERIOD rather than by 1000. Two reasons, and
+    // the first is a correctness bug rather than a nicety:
+    //  - 1000 is not generally a whole number of loop periods, so wrapping
+    //    there would land mid-cycle and put one visibly discontinuous frame
+    //    into the animation every ~16.7 minutes.
+    //  - it makes u_time itself exactly periodic, which is what lets grain()
+    //    -- an uncorrelated per-pixel hash that no circular-path trick can
+    //    fix -- come out bit-identical at t=0 and t=period.
+    const timeSec = floorMod(timeMs / 1000, loopSeconds > 0 ? loopSeconds : 1000);
     gl.uniform1f(timeLoc, timeSec);
     gl.uniform1f(seedLoc, floorMod(seed, 100));
+    gl.uniform1f(loopLoc, loopSeconds);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, paletteTexture);
@@ -236,6 +337,10 @@ export function createRenderer(opts: RendererOptions): Renderer {
     params = next;
   }
 
+  function setLoopSeconds(seconds: number | undefined): void {
+    loopSeconds = normalizeLoop(seconds);
+  }
+
   function resize(width: number, height: number): void {
     canvas.width = width;
     canvas.height = height;
@@ -248,5 +353,5 @@ export function createRenderer(opts: RendererOptions): Renderer {
     gl.getExtension("WEBGL_lose_context")?.loseContext();
   }
 
-  return { renderAt, setColors, setParams, resize, dispose };
+  return { renderAt, setColors, setParams, setLoopSeconds, resize, dispose };
 }

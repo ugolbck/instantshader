@@ -18,6 +18,11 @@ export function renderGradientFrame(opts: {
   params?: Record<string, number>;
   seed?: number;
   timeMs?: number;
+  /** Seamless-loop period in animation seconds. Only meaningful here in that
+   * it makes `timeMs` and `timeMs + loopSeconds * 1000` render the same
+   * frame — which is exactly how a loop is verified. See
+   * MountOptions.loopSeconds. */
+  loopSeconds?: number;
   width: number;
   height: number;
 }): RenderFrameResult {
@@ -33,6 +38,7 @@ export function renderGradientFrame(opts: {
     colors: opts.colors,
     params: resolveParams(def, opts.params),
     seed: opts.seed ?? 0,
+    loopSeconds: opts.loopSeconds,
   });
 
   renderer.renderAt(opts.timeMs ?? 0);

@@ -32,7 +32,14 @@ export function mountGradient(container: HTMLElement, opts: MountOptions): Mount
   let speed = opts.speed ?? 1;
   const seed = opts.seed ?? 0;
 
-  const renderer = createRenderer({ canvas, shader: def, colors, params, seed });
+  const renderer = createRenderer({
+    canvas,
+    shader: def,
+    colors,
+    params,
+    seed,
+    loopSeconds: opts.loopSeconds,
+  });
 
   // `clockMs` is the authoritative playback position handed to renderAt().
   // `epoch` is the performance.now() timestamp that would correspond to
@@ -116,6 +123,10 @@ export function mountGradient(container: HTMLElement, opts: MountOptions): Mount
     setParams(next: Record<string, number>): void {
       params = { ...params, ...next };
       renderer.setParams(params);
+      if (!playing) renderOnce();
+    },
+    setLoopSeconds(seconds: number | undefined): void {
+      renderer.setLoopSeconds(seconds);
       if (!playing) renderOnce();
     },
     setSpeed(next: number): void {

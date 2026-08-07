@@ -50,6 +50,23 @@ export type MountOptions = {
   speed?: number;
   /** RNG seed for any randomized/time-offset behavior. Defaults to 0. */
   seed?: number;
+  /**
+   * Makes the animation repeat exactly every `loopSeconds`, with no visible
+   * seam at the wrap — the frame at t and at t + loopSeconds are identical
+   * pixel for pixel. Intended for video export and for backgrounds that must
+   * not betray a restart. Omit (the default) for an animation that never
+   * repeats.
+   *
+   * Measured in ANIMATION seconds, so it interacts with `speed`: a 10s loop
+   * at speed 2 completes in 5 wall-clock seconds. Leave `speed` at 1 when
+   * exporting to a fixed-length video.
+   *
+   * Short periods are where the cost shows. Under ~29s beam's width swell
+   * stops animating (see loopFreq in the GLSL preamble), and below ~10s the
+   * rotation of the drift direction becomes noticeable as a slow circling of
+   * the whole composition. 15-60s is the comfortable range.
+   */
+  loopSeconds?: number;
 };
 
 /** Live handle returned by mount(), used to control a running gradient instance. */
@@ -58,6 +75,11 @@ export type MountHandle = {
   setColors(colors: string[]): void;
   setParams(params: Record<string, number>): void;
   setSpeed(speed: number): void;
+  /** Changes the seamless-loop period; pass undefined (or 0) to stop looping.
+   * See MountOptions.loopSeconds. Takes effect on the next painted frame, and
+   * because the shader clock wraps at the period, changing this mid-playback
+   * jumps the animation rather than easing into the new cycle. */
+  setLoopSeconds(seconds: number | undefined): void;
   pause(): void;
   resume(): void;
   /** Jumps playback to an absolute time position, in milliseconds. */
@@ -84,6 +106,9 @@ export type RendererOptions = {
   colors: string[];
   params: Record<string, number>;
   seed: number;
+  /** Seamless-loop period in animation seconds; omitted/0 disables looping.
+   * See MountOptions.loopSeconds. */
+  loopSeconds?: number;
 };
 
 /** Low-level seekable renderer contract returned by createRenderer(). */

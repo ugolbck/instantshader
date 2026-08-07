@@ -14,7 +14,7 @@
 // calm.
 
 import type { ShaderDef } from "../types";
-import { SIMPLEX_2D, FBM, SHAPE, GRAIN } from "./noise";
+import { SIMPLEX_2D, PERIODIC_2D, FBM, SHAPE, GRAIN } from "./noise";
 
 const FRAGMENT = `
 uniform float u_scale;
@@ -23,22 +23,32 @@ uniform float u_openness;
 uniform float u_grain;
 
 ${SIMPLEX_2D}
+${PERIODIC_2D}
 ${FBM}
 ${SHAPE}
 ${GRAIN}
 
-// Curl of a scalar simplex field: the finite-difference gradient of snoise,
-// rotated 90 degrees -- (dPsi/dy, -dPsi/dx) instead of (dPsi/dx, dPsi/dy).
-// A rotated gradient is always divergence-free, which is the whole trick:
-// advecting a point along it produces swirling motion with nothing to make
-// it converge or diverge, unlike advecting along the gradient itself.
-vec2 curl(vec2 p) {
-  // Finite-difference step: small enough to approximate a derivative,
-  // large enough that snoise's own float precision doesn't swamp the
-  // difference between the two samples.
+// Curl of a scalar potential field: the finite-difference gradient, rotated
+// 90 degrees -- (dPsi/dy, -dPsi/dx) instead of (dPsi/dx, dPsi/dy). A rotated
+// gradient is always divergence-free, which is the whole trick: advecting a
+// point along it produces swirling motion with nothing to make it converge
+// or diverge, unlike advecting along the gradient itself.
+//
+// The potential is pnoise, not snoise, and it is pnoise in BOTH looping and
+// non-looping modes on purpose. A tiling field is what lets the drift travel
+// in a straight line and still return (see loopTravel), and having the two
+// modes disagree about which noise they use would mean tuning a look in one
+// and shipping the other. The fbm below still uses snoise: it never sees the
+// drift, so it never needed to tile, and leaving it alone keeps the colour
+// masses' texture exactly as it was.
+vec2 curl(vec2 p, float tile) {
+  // Finite-difference step: small enough to approximate a derivative, large
+  // enough that the noise's own float precision doesn't swamp the difference
+  // between the two samples.
   float eps = 0.05;
-  float dx = (snoise(p + vec2(eps, 0.0)) - snoise(p - vec2(eps, 0.0))) / (2.0 * eps);
-  float dy = (snoise(p + vec2(0.0, eps)) - snoise(p - vec2(0.0, eps))) / (2.0 * eps);
+  vec2 rep = vec2(tile);
+  float dx = (pnoise(p + vec2(eps, 0.0), rep) - pnoise(p - vec2(eps, 0.0), rep)) / (2.0 * eps);
+  float dy = (pnoise(p + vec2(0.0, eps), rep) - pnoise(p - vec2(0.0, eps), rep)) / (2.0 * eps);
   return vec2(dy, -dx);
 }
 
@@ -51,7 +61,26 @@ void main() {
   // directly would. At 0.05 (that earlier prototype's rate) the whole
   // composition reorganized every ~3 seconds, measured as more pixel change
   // over 3.5s than the beam prototype showed over 7.5s.
-  float drift = u_time * 0.025;
+  //
+  // The curl field is sampled at 0.55x the fbm's frequency (see below), so
+  // the visible frame spans curlScale units of noise. The tile has to be at
+  // least twice that or the field repeats inside a single frame, which looks
+  // like wallpaper; ceil keeps it integral, which pnoise requires.
+  float curlScale = u_scale * 0.55;
+  float tile = max(2.0, ceil(curlScale * 2.0));
+
+  // Straight-line travel through a tiling field: the direction never changes,
+  // so this reads as continuous flow rather than the sway a circular path
+  // gives. One tile per loop, hence rate = tile/u_loop -- a short loop flows
+  // fast and a long one slowly, which is the price of the straight line.
+  // At the default scale that is tile 2 over a 60s loop = 0.033/sec, near
+  // enough to the hand-tuned 0.025*sqrt(2) that the look is preserved.
+  //
+  // vec2(1.0) -- not vec2(1.0, 0.0) -- because this drift was originally a
+  // SCALAR added to a vec2 coordinate, i.e. a diagonal translation.
+  // loopTravel takes its non-looping speed from |dir|, so dropping the
+  // diagonal here would quietly slow the unlooped look down by 30%.
+  vec2 drift = loopTravel(0.025, vec2(1.0), tile);
 
   // Advect the sample point along the curl field in 3 FIXED steps (written
   // out explicitly rather than a variable-length loop, which risks the
@@ -69,11 +98,10 @@ void main() {
   // Sampled at the same frequency (as it was) each mass sat inside its own
   // little eddy, so the advection only roughened mass edges and the result
   // was indistinguishable from a plain warped fbm.
-  float curlScale = u_scale * 0.55;
   vec2 advected = uv;
-  advected += curl(advected * curlScale + u_seed + drift) * u_drift * 0.055;
-  advected += curl(advected * curlScale + u_seed + drift) * u_drift * 0.055;
-  advected += curl(advected * curlScale + u_seed + drift) * u_drift * 0.055;
+  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.055;
+  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.055;
+  advected += curl(advected * curlScale + u_seed + drift, tile) * u_drift * 0.055;
 
   float t = fbm2(advected * u_scale + u_seed);
 

@@ -104,7 +104,14 @@ void main() {
   // Same slow crawl rate as the siblings. It slides the bend's sample window
   // along the noise slice, so the whole beam sways -- the S migrates -- with
   // no other motion source needed for the silhouette.
-  float drift = u_time * 0.02;
+  //
+  // Along x only (vec2(1.0, 0.0)) when not looping, matching the original
+  // scalar offset. When looping, loopDrift bends that into a circle, so the
+  // sample window also travels a little in y -- i.e. onto neighbouring noise
+  // slices. That reads as the bend MORPHING as well as migrating, which is
+  // if anything richer than pure translation, and it is what avoids the
+  // visible back-and-forth reversal a one-axis sine would give.
+  vec2 drift = loopDrift(0.02, vec2(1.0, 0.0));
 
   // Where the beam sits across the frame. One static seed term (placement)
   // plus the animated bend. Placement is held to 50% of crossHalf so the
@@ -112,14 +119,21 @@ void main() {
   // locally, and the clamp stops the sum at 75% so the worst seed still
   // keeps the core inside the frame instead of showing only its halo.
   float off0 = snoise(vec2(seedRow, 3.7));
-  float bend = snoise(vec2(sn * (0.55 * u_scale) + drift, seedRow));
+  float bend = snoise(vec2(sn * (0.55 * u_scale), seedRow) + drift);
   float c = crossHalf * clamp(0.5 * off0 + 0.45 * bend, -0.75, 0.75);
 
   // Breathing: the width swells ~10% over a ~57s cycle, phase-shifted along
   // the beam (the sn * 2.0 term) so it travels as a slow peristaltic wave
   // rather than the whole beam pulsing in lockstep, which read as a strobe
   // precursor even at this amplitude.
-  float w = u_width * (1.0 + 0.10 * sin(u_time * 0.11 + sn * 2.0 + u_seed));
+  //
+  // loopFreq snaps 0.11 to a whole number of cycles per loop. Loops of ~29s
+  // and up get one swell per cycle (at 57s that IS 0.11, unchanged). Shorter
+  // loops round to zero and the swell holds still at its along-beam phase --
+  // the deliberate choice, since the alternative at e.g. an 8s loop is a
+  // frequency 7x the tuned rate, i.e. exactly the strobe this amplitude was
+  // picked to avoid.
+  float w = u_width * (1.0 + 0.10 * sin(loopFreq(0.11) * u_time + sn * 2.0 + u_seed));
 
   // Signed cross distance in units of the beam's own width. Everything
   // profile-shaped below is a function of this one number.
@@ -162,8 +176,10 @@ void main() {
   // ridge lines blew up into jagged chevron kinks. Absolute sampling keeps
   // strands hair-thin at every width (26.0 = the old 2.6/nd density at the
   // original 0.1 default, preserving the approved look there).
-  float crawl = u_time * 0.05;
-  float fil = snoise(vec2(sn * (0.9 * u_scale) - crawl, (q - c) * 26.0 + seedRow * 1.7));
+  // Negative dir keeps the pre-loop sign (the coordinate subtracted crawl),
+  // so the strands still travel the same way along the beam.
+  vec2 crawl = loopDrift(0.05, vec2(-1.0, 0.0));
+  float fil = snoise(vec2(sn * (0.9 * u_scale), (q - c) * 26.0 + seedRow * 1.7) + crawl);
 
   // Holographic banding: the same field nudges the ramp position inside the
   // core, so colour bands streak lengthwise through the beam (the foil-like

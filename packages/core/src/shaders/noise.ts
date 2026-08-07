@@ -55,6 +55,70 @@ float snoise(vec2 v) {
 `;
 
 /**
+ * Classic 2D Perlin noise with an EXPLICIT TILING PERIOD, copied from the
+ * standard reference implementation (Stefan Gustavson / Ashima Arts
+ * webgl-noise, public domain). As with SIMPLEX_2D, the constants are fitted
+ * values — do not "tidy" them.
+ *
+ * Why this exists alongside snoise: a shader that animates by translating
+ * its sample point through a noise field can only loop if the field repeats
+ * along the direction of travel. Simplex cannot do that at any useful
+ * distance (its permutation repeats every 289 skewed lattice cells), so a
+ * looping translation has to be bent into a circle instead — which reads as
+ * the composition swaying back and forth rather than flowing. `pnoise` wraps
+ * its integer lattice at `rep`, so travelling exactly `rep` units lands on a
+ * bit-identical field and the motion can stay perfectly straight.
+ *
+ * `rep` MUST be integral (it is fed to mod() on lattice coordinates); a
+ * fractional period silently produces a discontinuity at the wrap.
+ */
+export const PERIODIC_2D = `
+vec4 mod289_4(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 permute4(vec4 x) { return mod289_4(((x * 34.0) + 1.0) * x); }
+vec4 taylorInvSqrt4(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+vec2 fade2(vec2 t) { return t * t * t * (t * (t * 6.0 - 15.0) + 10.0); }
+
+float pnoise(vec2 P, vec2 rep) {
+  vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
+  vec4 Pf = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
+  Pi = mod(Pi, rep.xyxy); // the tiling itself
+  Pi = mod289_4(Pi);      // keeps the permutation away from float truncation
+  vec4 ix = Pi.xzxz;
+  vec4 iy = Pi.yyww;
+  vec4 fx = Pf.xzxz;
+  vec4 fy = Pf.yyww;
+
+  vec4 i = permute4(permute4(ix) + iy);
+
+  vec4 gx = fract(i * (1.0 / 41.0)) * 2.0 - 1.0;
+  vec4 gy = abs(gx) - 0.5;
+  vec4 tx = floor(gx + 0.5);
+  gx = gx - tx;
+
+  vec2 g00 = vec2(gx.x, gy.x);
+  vec2 g10 = vec2(gx.y, gy.y);
+  vec2 g01 = vec2(gx.z, gy.z);
+  vec2 g11 = vec2(gx.w, gy.w);
+
+  vec4 norm = taylorInvSqrt4(vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));
+  g00 *= norm.x;
+  g01 *= norm.y;
+  g10 *= norm.z;
+  g11 *= norm.w;
+
+  float n00 = dot(g00, vec2(fx.x, fy.x));
+  float n10 = dot(g10, vec2(fx.y, fy.y));
+  float n01 = dot(g01, vec2(fx.z, fy.z));
+  float n11 = dot(g11, vec2(fx.w, fy.w));
+
+  vec2 fade_xy = fade2(Pf.xy);
+  vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+  float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+  return 2.3 * n_xy;
+}
+`;
+
+/**
  * Fractal Brownian motion: sums octaves of snoise at doubling frequency
  * (lacunarity 2.0) and halving amplitude (gain 0.5), so each added octave
  * layers in finer detail at proportionally less visual weight. This is

@@ -29,6 +29,13 @@ export interface ShaderCanvasProps {
    */
   speed?: number;
   seed?: number;
+  /**
+   * Makes the animation repeat seamlessly every `loopSeconds` animation
+   * seconds. Unlike `params` and `speed`, setting this back to `undefined`
+   * DOES take effect — it turns looping off — because "no loop" is a real
+   * state the underlying handle can be put into.
+   */
+  loopSeconds?: number;
   paused?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -47,6 +54,7 @@ export function ShaderCanvas({
   params,
   speed,
   seed,
+  loopSeconds,
   paused,
   className,
   style,
@@ -72,6 +80,7 @@ export function ShaderCanvas({
       params: p,
       speed,
       seed,
+      loopSeconds,
     });
     handleRef.current = handle;
     if (paused) handle.pause();
@@ -94,6 +103,10 @@ export function ShaderCanvas({
   useEffect(() => {
     if (speed !== undefined) handleRef.current?.setSpeed(speed);
   }, [speed]);
+
+  useEffect(() => {
+    handleRef.current?.setLoopSeconds(loopSeconds);
+  }, [loopSeconds]);
 
   useEffect(() => {
     if (paused) {
