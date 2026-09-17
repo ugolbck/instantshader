@@ -5,6 +5,7 @@
 // Individual shader defs — the primary import path. Unused ones tree-shake.
 export { flow } from "./shaders/flow";
 export { beam } from "./shaders/beam";
+export { bloom } from "./shaders/bloom";
 
 // Registry conveniences — importing these pulls ALL shaders (documented as such).
 export { shaders, getShader } from "./registry";
