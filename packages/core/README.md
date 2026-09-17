@@ -2,7 +2,7 @@
 
 Animated WebGL gradient shaders with zero dependencies. Mount a live, resizable
 gradient into any DOM element, or render a single frame to a detached canvas
-for export pipelines. Built by [InstantGradient](https://instantgradient.com/shaders).
+for export pipelines. Built by [InstantGradient](https://instantgradient.com/app).
 
 ## Install
 
@@ -22,6 +22,36 @@ const handle = mountGradient(document.getElementById("bg")!, {
 
 // handle.pause() / handle.resume() / handle.dispose() when done
 ```
+
+## Shaders
+
+Each shader is a separate named export, so the ones you don't import
+tree-shake away.
+
+| Shader | Look | Params |
+| --- | --- | --- |
+| `flow` | Isotropic swirling currents. A curl-noise field advects the sample point before it hits fbm, so colour masses travel in continuous, fluid-like eddies with defined luminous edges and generous calm negative space. | `scale`, `curl`, `drift`, `openness`, `grain` |
+| `beam` | One wide beam of soft light crossing a near-black frame. The palette walks the beam's length, thin brighter filaments crawl inside it, and most of the frame is dark negative space. | `scale`, `width`, `glow`, `angle`, `grain` |
+| `bloom` | A fan of huge, ultra-soft petals radiating from the frame's bottom edge. One analytic rose-curve field, so the palette reads as concentric scalloped bands from a hot core out to a dark background, with thin dark creases between the petals. | `scale`, `petals`, `pinch`, `bend`, `sway`, `colorflow`, `grain` |
+
+Every shader takes the same mount options; `params` is where they differ:
+
+```ts
+import { mountGradient, bloom } from "instantshader";
+
+mountGradient(el, {
+  shader: bloom,
+  colors: ["#ffd9e8", "#ffb300", "#ff8fc0", "#3d7bff", "#0a2e14"],
+  // bloom has two independent motion modes — petals that breathe and lean,
+  // and colours that travel outward through a still pattern. Mix freely.
+  params: { sway: 0.5, colorflow: 0.4 },
+});
+```
+
+Ranges, defaults and labels are all discoverable at runtime — `shader.params`
+is an array of `ParamDef`, and `shader.randomParams(rand)` produces a full,
+sensible param set for "randomize" flows. `shaders` and `getShader(id)` expose
+the whole registry (importing either pulls every shader).
 
 ## Seamless loops
 
@@ -68,5 +98,11 @@ Notes:
 - **`beam` freezes its width swell below ~29s.** Its natural cycle is ~57s and
   cannot be squeezed into a short loop without becoming a throb, so under that
   threshold the swell holds still instead. Everything else still animates.
+- **`bloom` sheds parts of its sway on short loops.** Its `sway` is several
+  slow oscillations (petal breathing ~20s, fan lean ~30s, petal flex ~42s)
+  layered over a noise wander. Each oscillation holds still once the loop is
+  shorter than about half its own period, so below ~10s the wander is the only
+  thing left moving. `colorflow` is unaffected — it always fits at least one
+  full cycle into the loop, flowing faster on a short one.
 - Any loop necessarily revisits the same state every N seconds; a long period
   is what buys the impression of never repeating.

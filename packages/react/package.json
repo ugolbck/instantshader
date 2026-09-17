@@ -9,7 +9,7 @@
     "url": "git+https://github.com/ugolbck/instantshader.git",
     "directory": "packages/react"
   },
-  "homepage": "https://instantgradient.com/shaders",
+  "homepage": "https://instantgradient.com/app",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

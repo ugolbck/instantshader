@@ -16,6 +16,18 @@ npm install instantshader
 npm install @instantshader/react
 ```
 
+## Shaders
+
+| Shader | Look |
+| --- | --- |
+| `flow` | Isotropic swirling currents — fluid-like eddies with luminous edges and calm negative space. |
+| `beam` | One wide beam of soft light crossing a near-black frame, the palette walking its length. |
+| `bloom` | A fan of huge soft petals radiating from the frame's bottom edge, the palette reading as concentric scalloped bands. |
+
+Each is a named export of `instantshader` (and a component — `<Flow>`,
+`<Beam>`, `<Bloom>` — in `@instantshader/react`). See the
+[core README](packages/core/README.md) for params and usage.
+
 ## Development
 
 ```bash

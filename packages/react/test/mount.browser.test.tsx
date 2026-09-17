@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { Flow } from "../src/index";
+import { Beam, Bloom, Flow } from "../src/index";
+
+// Every shader component the package exports, exercised through the exact
+// usage the README documents. A new shader is only really shipped once its
+// component mounts, so adding one here is part of adding the shader.
+const COMPONENTS = [
+  { name: "Flow", Component: Flow },
+  { name: "Beam", Component: Beam },
+  { name: "Bloom", Component: Bloom },
+] as const;
 
 // Silences React's "not configured to support act(...)" warning; this is a
 // real browser test environment, just not one React recognizes by default.
@@ -13,7 +22,7 @@ async function nextFrame(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
-describe("Flow", () => {
+describe.each(COMPONENTS)("$name", ({ Component }) => {
   it("mounts a sized canvas and removes it on unmount", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -23,7 +32,7 @@ describe("Flow", () => {
     // synchronously with the render, so the canvas is guaranteed to exist
     // once this resolves instead of racing React's effect scheduling.
     await act(async () => {
-      root.render(<Flow colors={COLORS} style={{ width: 200, height: 100 }} />);
+      root.render(<Component colors={COLORS} style={{ width: 200, height: 100 }} />);
     });
 
     await nextFrame();
