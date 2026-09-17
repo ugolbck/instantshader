@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { flow, beam } from "instantshader";
+import { flow, beam, bloom } from "instantshader";
 import { ShaderCanvas } from "./ShaderCanvas";
 import type { ShaderCanvasProps } from "./ShaderCanvas";
 
@@ -11,4 +11,8 @@ export function Flow(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
 
 export function Beam(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
   return <ShaderCanvas shader={beam} {...props} />;
+}
+
+export function Bloom(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
+  return <ShaderCanvas shader={bloom} {...props} />;
 }
