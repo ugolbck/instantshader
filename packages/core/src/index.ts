@@ -6,6 +6,10 @@
 export { flow } from "./shaders/flow";
 export { beam } from "./shaders/beam";
 export { bloom } from "./shaders/bloom";
+export { halo } from "./shaders/halo";
+export { strata } from "./shaders/strata";
+export { dune } from "./shaders/dune";
+export { whorl } from "./shaders/whorl";
 
 // Registry conveniences — importing these pulls ALL shaders (documented as such).
 export { shaders, getShader } from "./registry";

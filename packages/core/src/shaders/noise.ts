@@ -209,3 +209,70 @@ float grain(vec2 uv, float time) {
   return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453);
 }
 `;
+
+/**
+ * Isotropic frame helpers, shared by every look whose composition is a SHAPE
+ * rather than a frame-filling field. worldUv() is 0-1 on both axes of a 16:9
+ * world, so raw uv stretches x by 1.78 -- circles render as ellipses and a
+ * rotated stripe changes thickness with its angle. isoCoord() scales x by the
+ * world aspect so a unit circle is a screen circle (frame half-height = 0.5),
+ * and isoHalf() is the frame's visible half-extents in that space, mirroring
+ * worldUv()'s cover fit so a square tile and a 16:9 export agree on where the
+ * edges are.
+ */
+export const ISO = `
+const float WORLD_ASPECT = 1000.0 / 562.5;
+vec2 isoCoord(vec2 uv) { return (uv - 0.5) * vec2(WORLD_ASPECT, 1.0); }
+vec2 isoHalf() {
+  float canvasAspect = u_resolution.x / u_resolution.y;
+  return vec2(0.5 * min(1.0, canvasAspect / WORLD_ASPECT),
+              0.5 * min(1.0, WORLD_ASPECT / canvasAspect))
+       * vec2(WORLD_ASPECT, 1.0);
+}
+`;
+
+/**
+ * A phase angle that advances at ~w rad/s and is exactly periodic over the
+ * loop -- for HEADLINE motions (a travelling wave, an orbiting colour) that
+ * must never freeze. This is the opposite trade to loopFreq, which rounds to
+ * zero on short loops to protect slow secondary swells from turning into a
+ * throb: here the cycle count is floored at one, so a short loop simply runs
+ * the motion faster.
+ *
+ * The count is also forced ODD. With an even count the phase at half-cycle is
+ * a whole number of turns, i.e. the frame at loop/2 would be identical to the
+ * frame at 0 for anything driven by this angle alone -- the loop would
+ * secretly be half as long as asked for.
+ *
+ * Not looping, w is snapped to a whole number of turns per 1000s, because
+ * u_time itself wraps there (see renderer.ts) and an unsnapped phase would
+ * jump once every ~16.7 minutes.
+ */
+export const LOOP_ANGLE = `
+float loopAngle(float w) {
+  if (u_loop <= 0.0) return TAU * floor(w * 1000.0 / TAU + 0.5) * (u_time / 1000.0);
+  float n = 2.0 * floor(w * u_loop / TAU * 0.5) + 1.0;
+  return TAU * n * (u_time / u_loop);
+}
+`;
+
+/**
+ * Seed decorrelation. Adding u_seed straight onto a noise coordinate makes
+ * the seed a PAN: neighbouring seeds show the same field slid sideways, so a
+ * seed slider reads as "moves the picture a bit" instead of "new picture".
+ * seedOffset() hashes the seed into an unrelated point of the noise plane, so
+ * any change of seed lands on a composition with nothing in common with the
+ * last one. seedHash(i) is the scalar version, one independent 0-1 value per
+ * channel i, for seeded angles and phases.
+ *
+ * The offset stays inside [8, 72), far below the ~1000 ceiling where snoise's
+ * float precision gives out (see the note at the top of this file).
+ */
+export const SEED = `
+float seedHash(float i) {
+  return fract(sin(u_seed * 12.9898 + i * 78.233) * 43758.5453);
+}
+vec2 seedOffset() {
+  return vec2(seedHash(11.0), seedHash(23.0)) * 64.0 + 8.0;
+}
+`;

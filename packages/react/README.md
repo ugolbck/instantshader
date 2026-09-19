@@ -1,8 +1,10 @@
+![InstantShader](https://raw.githubusercontent.com/ugolbck/instantshader/main/.github/assets/banner.jpg)
+
 # @instantshader/react
 
 React bindings for [instantshader](https://www.npmjs.com/package/instantshader), a
-zero-dependency animated WebGL gradient engine. Drop a `<Flow>`, `<Beam>` or
-`<Bloom>` component into any sized wrapper to mount a live, animated gradient. Built by
+zero-dependency animated WebGL gradient engine. Drop a `<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>` or
+`<Whorl>` component into any sized wrapper to mount a live, animated gradient. Built by
 [InstantGradient](https://instantgradient.com/app).
 
 ## Install
@@ -35,6 +37,10 @@ One component per shader, each a thin wrapper over the same props:
 | `<Flow>` | Isotropic swirling currents with defined luminous edges and calm negative space. | `scale`, `curl`, `drift`, `openness`, `grain` |
 | `<Beam>` | One wide beam of soft light crossing a near-black frame, the palette walking its length. | `scale`, `width`, `glow`, `angle`, `grain` |
 | `<Bloom>` | A fan of huge soft petals radiating from the bottom edge, palette as concentric scalloped bands. | `scale`, `petals`, `pinch`, `bend`, `sway`, `colorflow`, `grain` |
+| `<Halo>` | An eclipse disc with a bright limb and flowing corona; `x` / `y` place it, and the default is a glowing horizon arc. | `radius`, `x`, `y`, `glow`, `crescent`, `flares`, `grain` |
+| `<Strata>` | Stacked cut-paper layers with soft shadows. | `scale`, `layers`, `warp`, `ridges`, `stretch`, `depth`, `blend`, `angle`, `grain` |
+| `<Dune>` | Overlapping crests, crisp on top and airbrushed below. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
+| `<Whorl>` | A spiral of curved blades, positionable with `x` / `y`. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
 
 ```tsx
 import { Bloom } from "@instantshader/react";

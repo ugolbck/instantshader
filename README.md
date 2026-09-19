@@ -1,44 +1,332 @@
-# InstantShader
+<p align="center">
+  <a href="https://instantgradient.com/app">
+    <img src=".github/assets/banner.jpg" alt="InstantShader — animated WebGL gradient shaders, zero dependencies" width="100%" />
+  </a>
+</p>
 
-Animated WebGL gradient shaders, zero dependencies, by [InstantGradient](https://instantgradient.com).
+<p align="center">
+  <a href="https://www.npmjs.com/package/instantshader"><img alt="npm" src="https://img.shields.io/npm/v/instantshader?style=flat-square&label=instantshader&color=8b5cf6" /></a>
+  <a href="https://www.npmjs.com/package/@instantshader/react"><img alt="npm (react)" src="https://img.shields.io/npm/v/@instantshader/react?style=flat-square&label=%40instantshader%2Freact&color=8b5cf6" /></a>
+  <a href="https://bundlephobia.com/package/instantshader"><img alt="bundle size" src="https://img.shields.io/bundlephobia/minzip/instantshader?style=flat-square&label=min%2Bgzip&color=ec4899" /></a>
+  <img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-ec4899?style=flat-square" />
+  <img alt="types included" src="https://img.shields.io/badge/types-included-fb923c?style=flat-square" />
+  <a href="https://github.com/ugolbck/instantshader/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ugolbck/instantshader/ci.yml?branch=main&style=flat-square&label=ci" /></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/npm/l/instantshader?style=flat-square&color=fb923c" /></a>
+</p>
 
-## Packages
+<p align="center">
+  Drop-in animated gradient backgrounds, rendered on the GPU.<br />
+  Give a shader 2 to 8 colours, mount it in any element, done.
+</p>
 
-| Package | Description |
-| --- | --- |
-| [`instantshader`](https://www.npmjs.com/package/instantshader) | Core zero-dependency WebGL shader engine |
-| [`@instantshader/react`](https://www.npmjs.com/package/@instantshader/react) | React bindings for InstantShader |
-| `playground` | Local dev playground (not published) |
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#shaders">Shaders</a> ·
+  <a href="#api">API</a> ·
+  <a href="#seamless-loops">Loops</a> ·
+  <a href="#exporting-frames">Export</a> ·
+  <a href="https://instantgradient.com/app">Live editor</a>
+</p>
+
+<br />
+
+- **Seven looks**, each tunable through a handful of plain numeric params.
+- **Any palette.** Pass 2 to 8 hex colours. They are blended in OKLCh, so a ramp between two saturated colours stays saturated instead of going grey in the middle.
+- **Zero dependencies**, raw WebGL1, tree-shakeable: you only ship the shaders you import.
+- **Seamless loops** on request, exact to the pixel, for video export.
+- **Resolution independent.** The same settings give the same composition in a 300px card and a 4K export.
+- Vanilla JS and React. TypeScript types included.
+
+## Quick start
+
+### React
 
 ```bash
-npm install instantshader
-# or, for React:
 npm install @instantshader/react
 ```
 
+```tsx
+import { Halo } from "@instantshader/react";
+
+export function Hero() {
+  return (
+    <Halo
+      colors={["#1b0b3a", "#8b5cf6", "#ec4899", "#fde68a"]}
+      style={{ position: "absolute", inset: 0 }}
+    />
+  );
+}
+```
+
+The component renders a `<div>` and fills it with the canvas, so **give it a size** (through `style`, `className`, or a sized parent). It is marked `"use client"`, so it works as-is inside Next.js server components.
+
+### Vanilla JS
+
+```bash
+npm install instantshader
+```
+
+```ts
+import { mountGradient, halo } from "instantshader";
+
+const handle = mountGradient(document.getElementById("hero")!, {
+  shader: halo,
+  colors: ["#1b0b3a", "#8b5cf6", "#ec4899", "#fde68a"],
+});
+
+// later
+handle.dispose();
+```
+
+The canvas tracks the container's size by itself and renders at the device pixel ratio, capped at 2x.
+
 ## Shaders
 
-| Shader | Look |
-| --- | --- |
-| `flow` | Isotropic swirling currents — fluid-like eddies with luminous edges and calm negative space. |
-| `beam` | One wide beam of soft light crossing a near-black frame, the palette walking its length. |
-| `bloom` | A fan of huge soft petals radiating from the frame's bottom edge, the palette reading as concentric scalloped bands. |
+<table>
+  <tr>
+    <td width="25%"><img src=".github/assets/flow.jpg" alt="Flow" /><br /><b>Flow</b> <code>flow</code><br />Swirling fluid currents that fill the frame.</td>
+    <td width="25%"><img src=".github/assets/beam.jpg" alt="Beam" /><br /><b>Beam</b> <code>beam</code><br />One soft streak of light crossing a dark frame.</td>
+    <td width="25%"><img src=".github/assets/bloom.jpg" alt="Bloom" /><br /><b>Bloom</b> <code>bloom</code><br />A fan of huge soft petals rising from the bottom edge.</td>
+    <td width="25%"><img src=".github/assets/halo.jpg" alt="Halo" /><br /><b>Halo</b> <code>halo</code><br />An eclipse. Push it off-frame for a glowing horizon.</td>
+  </tr>
+  <tr>
+    <td><img src=".github/assets/strata.jpg" alt="Strata" /><br /><b>Strata</b> <code>strata</code><br />Stacked cut-paper layers with soft shadows.</td>
+    <td><img src=".github/assets/dune.jpg" alt="Dune" /><br /><b>Dune</b> <code>dune</code><br />Overlapping crests, crisp on top, airbrushed below.</td>
+    <td><img src=".github/assets/whorl.jpg" alt="Whorl" /><br /><b>Whorl</b> <code>whorl</code><br />A spiral of curved blades you can place anywhere.</td>
+    <td align="center"><br /><b>Your palette</b><br />Try every look with your own colours in the <a href="https://instantgradient.com/app">live editor</a>.</td>
+  </tr>
+</table>
 
-Each is a named export of `instantshader` (and a component — `<Flow>`,
-`<Beam>`, `<Bloom>` — in `@instantshader/react`). See the
-[core README](packages/core/README.md) for params and usage.
+Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`).
+
+### Params
+
+Pass any subset through `params`; whatever you leave out keeps its default. All shaders also take `grain` (0 – 0.3), a film-grain amount.
+
+```tsx
+<Halo colors={colors} params={{ radius: 1.3, y: -0.85, flares: 0.2 }} />
+```
+
+<details>
+<summary><b>Flow</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `scale` | 0.6 – 2.6 | 1.7 | Size of the colour masses |
+| `curl` | 0.3 – 1.6 | 1.05 | How tight the eddies are |
+| `drift` | 0 – 1 | 0.5 | How strongly the currents swirl |
+| `openness` | 0 – 1 | 0.28 | Gives the first colour more calm, empty space |
+
+</details>
+
+<details>
+<summary><b>Beam</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `scale` | 0.5 – 2 | 1 | How much the beam bends |
+| `width` | 0.04 – 0.6 | 0.14 | Beam thickness, from hairline to wall of light |
+| `glow` | 0 – 1 | 0.5 | How far light spills into the dark |
+| `angle` | 0 – 360 | 28 | Beam direction, in degrees |
+
+</details>
+
+<details>
+<summary><b>Bloom</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `scale` | 0.5 – 2 | 0.9 | Petal length |
+| `petals` | 6 – 16 | 11 | Petals around the full circle (about half are in frame) |
+| `pinch` | 0.35 – 2.5 | 0.6 | Low is fat petals with thin creases, high is a slim star |
+| `bend` | -0.9 – 0.9 | 0.25 | Curves the petals one way or the other |
+| `sway` | 0 – 1 | 0.5 | Motion of the shapes: petals breathe and lean |
+| `colorflow` | 0 – 1 | 0 | Motion of the colours: they travel outward through still petals |
+
+</details>
+
+<details>
+<summary><b>Halo</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `radius` | 0.12 – 1.6 | 1 | Disc radius, in frame heights |
+| `x`, `y` | -1 – 1 | 0, -0.78 | Disc position. `0` is centred; `±1` puts the disc just outside that edge, whatever the radius |
+| `glow` | 0 – 1 | 0.5 | Reach of the corona |
+| `crescent` | 0 – 1 | 0.35 | `0` is a full ring, `1` a single lit arc |
+| `flares` | 0 – 1 | 0.5 | Streamer strength, from smooth glow to spiky corona |
+
+The default is the horizon composition (big disc, mostly below the frame). For a centred eclipse use `{ radius: 0.3, y: 0 }`.
+
+</details>
+
+<details>
+<summary><b>Strata</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `scale` | 0.4 – 2.5 | 1 | Size of the landscape |
+| `layers` | 3 – 16 | 7 | Number of paper sheets |
+| `warp` | 0 – 1 | 0.5 | Round islands at `0`, liquid marbled shorelines at `1` |
+| `ridges` | 0 – 1 | 0.25 | Turns islands into branching spines and crater rims |
+| `stretch` | 0 – 1 | 0.2 | Draws shapes out into long flowing bands |
+| `depth` | 0 – 1 | 0.6 | Shadow length and strength; `0` is flat |
+| `blend` | 0 – 1 | 0.15 | `0` is one flat colour per sheet, `1` a continuous gradient |
+| `angle` | 0 – 360 | 125 | Where the light comes from, in degrees |
+
+</details>
+
+<details>
+<summary><b>Dune</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `layers` | 2 – 12 | 6 | Number of crests |
+| `swell` | 0 – 1.6 | 0.7 | Crest height; high values make crests cross each other |
+| `waves` | 0.3 – 5 | 1.4 | Undulations across the frame |
+| `fade` | 0 – 1.5 | 0.9 | How far each layer fades below its crest |
+| `soft` | 0 – 1 | 0.02 | Crest edge, from vector-crisp to fog |
+| `angle` | 0 – 360 | 352 | Rotation of the whole stack, in degrees |
+
+</details>
+
+<details>
+<summary><b>Whorl</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `blades` | 2 – 24 | 9 | Number of blades |
+| `twist` | -3 – 3 | 1.1 | Spiral tightness; the sign picks the winding direction, `0` is a straight fan |
+| `depth` | 0 – 1.5 | 0.8 | Strength of the crease at each blade edge |
+| `scale` | 0.3 – 3 | 1.2 | Distance over which the palette runs, centre to rim |
+| `wobble` | 0 – 1 | 0.4 | Organic bending; `0` is a perfect pinwheel |
+| `x`, `y` | -1.5 – 1.5 | -0.55, -0.7 | Centre position. `0` is the middle, `±1` the frame edge, beyond is off-frame |
+
+</details>
+
+The same data is available at runtime: every shader def carries `params` (key, label, min, max, step, default), which is enough to build a settings panel, and `randomParams(rand)`, which returns a good-looking random set.
+
+```ts
+import { dune } from "instantshader";
+
+handle.setParams(dune.randomParams(Math.random));
+```
+
+## API
+
+### `mountGradient(container, options)`
+
+| Option | Type | Default | |
+| --- | --- | --- | --- |
+| `shader` | `ShaderDef` | required | One of the shader exports |
+| `colors` | `string[]` | required | 2 to 8 hex colours, in ramp order |
+| `params` | `Record<string, number>` | shader defaults | See [Params](#params) |
+| `speed` | `number` | `1` | Animation speed multiplier; `0` freezes it |
+| `seed` | `number` | `0` | Picks the composition. Same seed, same picture |
+| `loopSeconds` | `number` | off | See [Seamless loops](#seamless-loops) |
+
+It returns a handle:
+
+| Method | |
+| --- | --- |
+| `setColors(colors)` | Swap the palette without remounting |
+| `setParams(params)` | Merge new params into the current ones |
+| `setSpeed(speed)` | Change speed without a jump in the animation |
+| `setLoopSeconds(seconds)` | Change or disable (`undefined`) the loop period |
+| `pause()` / `resume()` | Pausing stops the render loop entirely, so a paused canvas costs nothing |
+| `seek(ms)` / `getTimeMs()` | Jump to, or read, the playback position |
+| `canvas` | The underlying `<canvas>` element |
+| `dispose()` | Stop rendering and release the WebGL context |
+
+### React props
+
+`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>` take `colors`, `params`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it.
+
+To pick the shader dynamically, use the generic component:
+
+```tsx
+import { ShaderCanvas, flow } from "@instantshader/react";
+import { getShader } from "instantshader";
+
+<ShaderCanvas shader={getShader(id) ?? flow} colors={colors} />;
+```
+
+`getShader(id)` and the `shaders` array come from `instantshader`. Importing either pulls in every shader, so prefer the named exports when you know which look you want.
+
+### Respecting reduced motion
+
+The library does not read user preferences for you. One line covers it:
+
+```tsx
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+<Dune colors={colors} paused={reduce} />;
+```
+
+## Seamless loops
+
+Set `loopSeconds` and the animation repeats exactly: the frame at `t` and the frame at `t + loopSeconds` are identical pixel for pixel, with no visible seam at the wrap.
+
+```ts
+mountGradient(el, { shader: flow, colors, loopSeconds: 30 });
+```
+
+- 15 to 60 seconds is the comfortable range.
+- The period is measured in animation seconds, so it interacts with `speed`: a 60s loop at `speed: 2` completes in 30 real seconds.
+- A short loop makes some motions run faster, since they have to complete a whole cycle in less time. Prefer a longer loop with a higher `speed` over a very short loop.
+
+Per-shader details are in the [`instantshader` package README](packages/core/README.md#seamless-loops).
+
+## Exporting frames
+
+`renderGradientFrame` draws one frame into a detached canvas at an exact pixel size, for thumbnails, social images or feeding a video encoder.
+
+```ts
+import { renderGradientFrame, strata } from "instantshader";
+
+const { canvas, dispose } = renderGradientFrame({
+  shader: strata,
+  colors: ["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"],
+  seed: 3,
+  timeMs: 2000,
+  width: 1920,
+  height: 1080,
+});
+
+const png = canvas.toDataURL("image/png");
+dispose(); // releases the WebGL context
+```
+
+For video, use `createRenderer({ canvas, shader, colors, params, seed, loopSeconds })` and call `renderAt(timeMs)` once per frame on the same canvas. The images in this README were rendered this way.
+
+## Browser support
+
+Anything with WebGL1, which is every current browser. If a context cannot be created, `mountGradient` throws, so wrap it in a `try` if you need a CSS fallback.
+
+## Packages
+
+| Package | |
+| --- | --- |
+| [`instantshader`](packages/core) | Core engine and shaders. Zero dependencies |
+| [`@instantshader/react`](packages/react) | React components |
+| `playground` | Local playground with live controls (not published) |
 
 ## Development
 
 ```bash
 pnpm i
-pnpm exec playwright install chromium # first time only, for core's browser tests
+pnpm exec playwright install chromium # first time only, for the browser tests
 pnpm build
 pnpm test
 pnpm playground
 ```
 
-## Releasing
+The playground reads the built package, so run `pnpm build` after changing a shader.
+
+<details>
+<summary><b>Releasing</b> (maintainers)</summary>
+
+<br />
 
 Every user-visible change needs a changeset:
 
@@ -60,9 +348,7 @@ releases over to CI:
 2. Set the repository variable `RELEASE_ENABLED=true` (Settings → Secrets and
    variables → Actions → Variables).
 
-### Publishing by hand
-
-Still the fallback until the above is wired up:
+**Publishing by hand** is still the fallback until the above is wired up:
 
 ```bash
 pnpm changeset version   # applies pending changesets, writes CHANGELOGs
@@ -79,3 +365,9 @@ is needed.
 
 Expect a few minutes between a successful publish and the version becoming
 installable — npm scans every publish for malware before releasing it.
+
+</details>
+
+## License
+
+[MIT](LICENSE). Built by [InstantGradient](https://instantgradient.com).
