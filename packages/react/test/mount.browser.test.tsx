@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { Beam, Bloom, Flow } from "../src/index";
+import { Beam, Bloom, Dune, Flow, Halo, Strata, Whorl } from "../src/index";
 
 // Every shader component the package exports, exercised through the exact
 // usage the README documents. A new shader is only really shipped once its
@@ -10,6 +10,10 @@ const COMPONENTS = [
   { name: "Flow", Component: Flow },
   { name: "Beam", Component: Beam },
   { name: "Bloom", Component: Bloom },
+  { name: "Halo", Component: Halo },
+  { name: "Strata", Component: Strata },
+  { name: "Dune", Component: Dune },
+  { name: "Whorl", Component: Whorl },
 ] as const;
 
 // Silences React's "not configured to support act(...)" warning; this is a

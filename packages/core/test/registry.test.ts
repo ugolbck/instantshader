@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { beam, flow, getShader, shaders } from "../src/index";
+import { beam, dune, flow, getShader, halo, shaders, strata, whorl } from "../src/index";
 
 describe("shader registry", () => {
   it("has unique ids", () => {
@@ -10,6 +10,10 @@ describe("shader registry", () => {
   it("getShader looks up registered shaders by id", () => {
     expect(getShader("flow")).toBe(flow);
     expect(getShader("beam")).toBe(beam);
+    expect(getShader("halo")).toBe(halo);
+    expect(getShader("strata")).toBe(strata);
+    expect(getShader("dune")).toBe(dune);
+    expect(getShader("whorl")).toBe(whorl);
   });
 
   it("getShader returns undefined for an unknown id", () => {
