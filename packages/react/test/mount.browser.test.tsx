@@ -56,3 +56,57 @@ describe.each(COMPONENTS)("$name", ({ Component }) => {
     container.remove();
   });
 });
+
+describe("effects", () => {
+  it("draws effect layers over a generator, and swaps them without remounting", async () => {
+    const { Bloom, dither, pixelate } = await import("../src/index");
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        <Bloom colors={COLORS} paused style={{ width: 200, height: 100 }} effects={[{ effect: pixelate, params: { size: 40 } }]} />,
+      );
+    });
+    await nextFrame();
+    const canvas = container.querySelector("canvas")!;
+    const before = canvas.toDataURL();
+
+    await act(async () => {
+      root.render(
+        <Bloom colors={COLORS} paused style={{ width: 200, height: 100 }} effects={[{ effect: dither, params: { colorMode: "duotone" } }]} />,
+      );
+    });
+    await nextFrame();
+    // Same canvas element: the stack was updated in place.
+    expect(container.querySelector("canvas")).toBe(canvas);
+    expect(canvas.toDataURL()).not.toBe(before);
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it("mounts a media source", async () => {
+    const { ShaderStack, halftone } = await import("../src/index");
+    const picture = document.createElement("canvas");
+    picture.width = 64;
+    picture.height = 64;
+    const ctx = picture.getContext("2d")!;
+    ctx.fillStyle = "#808080";
+    ctx.fillRect(0, 0, 64, 64);
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <ShaderStack source={{ kind: "media", media: picture }} colors={COLORS} effects={[{ effect: halftone }]} style={{ width: 120, height: 120 }} />,
+      );
+    });
+    await nextFrame();
+    expect(container.querySelector("canvas")).not.toBeNull();
+    await act(async () => root.unmount());
+    container.remove();
+  });
+});

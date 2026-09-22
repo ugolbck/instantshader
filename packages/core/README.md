@@ -62,6 +62,25 @@ is an array of `ParamDef`, and `shader.randomParams(rand)` produces a full,
 sensible param set for "randomize" flows. `shaders` and `getShader(id)` expose
 the whole registry (importing either pulls every shader).
 
+## Effects
+
+Effects redraw an existing picture: a generator's output or your own image, canvas or video frame.
+
+```ts
+import { mountStack, bloom, dither } from "instantshader";
+
+mountStack(el, {
+  source: { kind: "generator", shader: bloom },
+  colors: ["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"],
+  effects: [{ effect: dither, params: { pattern: "blueNoise", colorMode: "palette", levels: 4 } }],
+  loopSeconds: 30,
+});
+```
+
+`pixelate`, `dither`, `halftone` and `ascii` ship today; `effects` and `getEffect(id)` list them, and each `EffectDef.params` describes its controls (float, enum, bool and color, with a `when` hint for conditional ones). Use `{ kind: "media", media }` as the source for an image. `createStackRenderer` is the seekable renderer for export and `renderStackFrame` the one-shot.
+
+Effect sizes are in pixels at 1080p and effects work on a per-cell buffer that is identical at every output size, so an export matches its preview cell for cell. The [main README](../../README.md#effects) has the details.
+
 ## Seamless loops
 
 Set `loopSeconds` and the animation repeats exactly, with no visible seam at

@@ -167,6 +167,24 @@
         font-style: normal;
         color: #e5e5e5;
       }
+      .stage.export {
+        /* The 4K export, laid over the right half of the live preview. */
+        clip-path: inset(0 0 0 50%);
+        border-left: 0;
+        pointer-events: none;
+      }
+      .stage.export canvas {
+        display: block;
+      }
+      .note {
+        margin: 6px 0 0;
+        font-size: 11px;
+        opacity: 0.7;
+      }
+      .note.warn {
+        color: #ffb454;
+        opacity: 1;
+      }
       .check {
         display: flex;
         align-items: center;

@@ -16,6 +16,10 @@ export default defineConfig({
         test: {
           name: "browser",
           include: ["test/**/*.browser.test.ts"],
+          // The loop-seam tests render a few hundred frames each; ~3s on a
+          // laptop, but CI runs on a shared runner with software GL and has
+          // gone past the 15s default.
+          testTimeout: 90_000,
           browser: {
             enabled: true,
             headless: true,

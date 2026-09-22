@@ -1,9 +1,9 @@
-import type { MountHandle, MountOptions } from "./types";
-import { createRenderer } from "./renderer";
+import type { MountHandle, MountOptions, StackHandle, StackMountOptions } from "./types";
+import { createStackRenderer } from "./stack";
 import { resolveParams } from "./params";
 
 /**
- * Mounts a live, animated gradient into `container` and returns a handle to
+ * Mounts a live, animated stack (a source plus effect layers) into `container` and returns a handle to
  * control it. Owns a canvas (sized to the container via ResizeObserver, DPR
  * capped at 2 to bound fill-rate cost on high-density displays) and a RAF
  * loop that runs ONLY while playing — the same lifecycle used by the
@@ -18,27 +18,25 @@ import { resolveParams } from "./params";
  * callers may mount many simultaneously-paused instances (e.g. a screenshot
  * grid) that must never carry a perpetual 60fps draw loop each.
  */
-export function mountGradient(container: HTMLElement, opts: MountOptions): MountHandle {
-  const def = opts.shader;
-
+export function mountStack(container: HTMLElement, opts: StackMountOptions): StackHandle {
   const canvas = document.createElement("canvas");
   canvas.style.display = "block";
   canvas.style.width = "100%";
   canvas.style.height = "100%";
   container.appendChild(canvas);
 
-  let colors = opts.colors;
-  let params = resolveParams(def, opts.params);
+  let source = opts.source;
   let speed = opts.speed ?? 1;
-  const seed = opts.seed ?? 0;
 
-  const renderer = createRenderer({
+  const renderer = createStackRenderer({
     canvas,
-    shader: def,
-    colors,
-    params,
-    seed,
+    source,
+    effects: opts.effects,
+    colors: opts.colors,
+    seed: opts.seed ?? 0,
     loopSeconds: opts.loopSeconds,
+    background: opts.background,
+    fontFamily: opts.fontFamily,
   });
 
   // `clockMs` is the authoritative playback position handed to renderAt().
@@ -91,40 +89,79 @@ export function mountGradient(container: HTMLElement, opts: MountOptions): Mount
   }
   rafId = requestAnimationFrame(tick);
 
-  function applySize(cssWidth: number, cssHeight: number): void {
+  /** Sets the backing store to an exact device-pixel size (DPR capped at 2). */
+  function applyDeviceSize(deviceWidth: number, deviceHeight: number): void {
     // Recomputed per-resize (not cached at mount) so dragging the window to
     // a monitor with a different pixel density is picked up automatically.
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = Math.max(1, Math.round(cssWidth * dpr));
-    const height = Math.max(1, Math.round(cssHeight * dpr));
+    const dpr = window.devicePixelRatio || 1;
+    const cap = dpr > 2 ? 2 / dpr : 1;
+    const width = Math.max(1, Math.round(deviceWidth * cap));
+    const height = Math.max(1, Math.round(deviceHeight * cap));
     if (canvas.width !== width || canvas.height !== height) {
       renderer.resize(width, height);
       if (!playing) renderOnce();
     }
   }
 
-  const initialRect = container.getBoundingClientRect();
-  applySize(initialRect.width || 1, initialRect.height || 1);
+  function applyCssSize(cssWidth: number, cssHeight: number): void {
+    const dpr = window.devicePixelRatio || 1;
+    applyDeviceSize(cssWidth * dpr, cssHeight * dpr);
+  }
 
+  const initialRect = container.getBoundingClientRect();
+  applyCssSize(initialRect.width || 1, initialRect.height || 1);
+
+  // Size from the element's DEVICE-pixel box where the browser reports one.
+  // cssSize * devicePixelRatio is off by up to a pixel at fractional DPR or
+  // browser zoom (a 791.98px-wide box, say); the browser then resamples the
+  // whole canvas to fit, in gamma space, which blurs a gradient harmlessly
+  // but turns a fine dither or halftone into moire that is not in the render.
+  // Safari has no device-pixel-content-box and keeps the old computation.
   const resizeObserver = new ResizeObserver((entries) => {
     for (const entry of entries) {
-      applySize(entry.contentRect.width, entry.contentRect.height);
+      const device = entry.devicePixelContentBoxSize?.[0];
+      if (device) applyDeviceSize(device.inlineSize, device.blockSize);
+      else applyCssSize(entry.contentRect.width, entry.contentRect.height);
     }
   });
-  resizeObserver.observe(container);
+  try {
+    resizeObserver.observe(container, { box: "device-pixel-content-box" });
+  } catch {
+    resizeObserver.observe(container);
+  }
 
-  const handle: MountHandle = {
+  const handle: StackHandle = {
     canvas,
     setColors(next: string[]): void {
-      colors = next;
-      renderer.setColors(colors);
+      renderer.setColors(next);
       if (!playing) renderOnce();
     },
-    setParams(next: Record<string, number>): void {
-      params = { ...params, ...next };
-      renderer.setParams(params);
+    setSource(next): void {
+      source = next;
+      renderer.setSource(next);
       if (!playing) renderOnce();
     },
+    setSourceParams(next: Record<string, number>): void {
+      if (source.kind !== "generator") return;
+      // Merged, not replaced: a caller pushing one slider's value must not
+      // reset every other param to its default.
+      source = { ...source, params: { ...resolveParams(source.shader, source.params), ...next } };
+      renderer.setSourceParams(source.params!);
+      if (!playing) renderOnce();
+    },
+    setEffects(next): void {
+      renderer.setEffects(next);
+      if (!playing) renderOnce();
+    },
+    setEffectParams(index, next): void {
+      renderer.setEffectParams(index, next);
+      if (!playing) renderOnce();
+    },
+    refreshMedia(): void {
+      renderer.refreshMedia();
+      if (!playing) renderOnce();
+    },
+    getGridInfo: renderer.getGridInfo,
     setLoopSeconds(seconds: number | undefined): void {
       renderer.setLoopSeconds(seconds);
       if (!playing) renderOnce();
@@ -180,4 +217,27 @@ export function mountGradient(container: HTMLElement, opts: MountOptions): Mount
   };
 
   return handle;
+}
+
+/** mountStack() for the common case of one generator and no effects. */
+export function mountGradient(container: HTMLElement, opts: MountOptions): MountHandle {
+  const handle = mountStack(container, {
+    source: { kind: "generator", shader: opts.shader, params: opts.params },
+    colors: opts.colors,
+    speed: opts.speed,
+    seed: opts.seed,
+    loopSeconds: opts.loopSeconds,
+  });
+  return {
+    canvas: handle.canvas,
+    setColors: handle.setColors,
+    setParams: handle.setSourceParams,
+    setSpeed: handle.setSpeed,
+    setLoopSeconds: handle.setLoopSeconds,
+    pause: handle.pause,
+    resume: handle.resume,
+    seek: handle.seek,
+    getTimeMs: handle.getTimeMs,
+    dispose: handle.dispose,
+  };
 }
