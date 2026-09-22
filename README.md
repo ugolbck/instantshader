@@ -212,6 +212,61 @@ import { dune } from "instantshader";
 handle.setParams(dune.randomParams(Math.random));
 ```
 
+## Effects
+
+An effect redraws an existing picture: a gradient from this library, or your own image. Four ship today.
+
+| Effect | What it does | Motion |
+| --- | --- | --- |
+| `pixelate` | Flat cells, optional posterize and grid lines | none of its own |
+| `dither` | Bayer 2x2, 4x4, 8x8 or blue noise, 2 to 8 levels | `shimmer` |
+| `halftone` | Dots, lines or squares on a square or hex grid at any angle | `pulse` |
+| `ascii` | Characters picked by brightness, six character sets | `cycle` |
+
+```tsx
+import { Bloom, dither } from "@instantshader/react";
+
+<Bloom
+  colors={["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"]}
+  loopSeconds={30}
+  effects={[{ effect: dither, params: { pattern: "blueNoise", size: 4, colorMode: "palette", levels: 4 } }]}
+  style={{ width: "100%", height: 480 }}
+/>
+```
+
+Over your own image, in vanilla JS:
+
+```ts
+import { mountStack, halftone } from "instantshader";
+
+const img = new Image();
+img.src = "/photo.jpg";
+await img.decode();
+
+mountStack(el, {
+  source: { kind: "media", media: img }, // fit: "cover" (default) or "contain"
+  colors: ["#111111", "#f4f1ea"],
+  effects: [{ effect: halftone, params: { size: 20, angle: 30 } }],
+});
+```
+
+In React that is `<ShaderStack source={{ kind: "media", media: img }} ... />`. Layers stack bottom to top, so `effects` can hold several.
+
+**Color modes.** Dither, halftone and ASCII share a `colorMode` param: `source` keeps the picture's colors, `duotone` uses `ink` and `paper`, `palette` maps tone through `colors`. Over a gradient, palette mode keeps the gradient's own color layout, and a dither with `levels` equal to the number of colors outputs exactly those colors and nothing else.
+
+**The export matches the preview.** Sizes are in pixels at 1080p, not in screen pixels. Every effect computes one value per cell into a small buffer whose size depends only on its params and the aspect ratio, and each output size paints that same buffer. A 900px preview and a 3840x2160 export contain the same cells with the same values; 1080p-class and 4K-class exports are pixel-exact, and the preview is that export downscaled in linear light, so a dither too fine for the preview to resolve still shows the right brightness. `getGridInfo()` on the handle reports output pixels per cell if you want to warn about that case.
+
+Export works as before, with `createStackRenderer` in place of `createRenderer`:
+
+```ts
+const stack = createStackRenderer({ canvas, source, effects, colors, seed, loopSeconds: 30 });
+for (let f = 0; f < frames; f++) {
+  stack.renderAt((f / fps) * 1000); // then hand `canvas` to your encoder
+}
+```
+
+Effect motion follows the same loop rules as the generators, so a looping stack is exactly periodic. Error-diffusion dithers such as Floyd-Steinberg are not included: they are sequential and cannot run in a fragment shader. Blue noise is the pattern that looks closest.
+
 ## API
 
 ### `mountGradient(container, options)`
