@@ -3,7 +3,8 @@
 # instantshader
 
 Animated WebGL gradient shaders with zero dependencies. Mount a live, resizable
-gradient into any DOM element, or render a single frame to a detached canvas
+gradient into any DOM element, put dither, pixelate, halftone or ASCII effects
+over it or over your own image, or render a single frame to a detached canvas
 for export pipelines. Built by [InstantGradient](https://instantgradient.com/app).
 
 ## Install
@@ -51,20 +52,22 @@ import { mountGradient, bloom } from "instantshader";
 mountGradient(el, {
   shader: bloom,
   colors: ["#ffd9e8", "#ffb300", "#ff8fc0", "#3d7bff", "#0a2e14"],
-  // bloom has two independent motion modes — petals that breathe and lean,
+  // bloom has two independent motion modes: petals that breathe and lean,
   // and colours that travel outward through a still pattern. Mix freely.
   params: { sway: 0.5, colorflow: 0.4 },
 });
 ```
 
-Ranges, defaults and labels are all discoverable at runtime — `shader.params`
+Ranges, defaults and labels are all discoverable at runtime. `shader.params`
 is an array of `ParamDef`, and `shader.randomParams(rand)` produces a full,
 sensible param set for "randomize" flows. `shaders` and `getShader(id)` expose
 the whole registry (importing either pulls every shader).
 
 ## Effects
 
-Effects redraw an existing picture: a generator's output or your own image, canvas or video frame.
+An effect redraws a picture: a shader's output, or an image, canvas or video
+frame you supply. Four are included: `pixelate`, `dither`, `halftone` and
+`ascii`.
 
 ```ts
 import { mountStack, bloom, dither } from "instantshader";
@@ -77,14 +80,30 @@ mountStack(el, {
 });
 ```
 
-`pixelate`, `dither`, `halftone` and `ascii` ship today; `effects` and `getEffect(id)` list them, and each `EffectDef.params` describes its controls (float, enum, bool and color, with a `when` hint for conditional ones). Use `{ kind: "media", media }` as the source for an image. `createStackRenderer` is the seekable renderer for export and `renderStackFrame` the one-shot.
+For an image, the source is `{ kind: "media", media: img }` with an optional
+`fit` of `"cover"` (default) or `"contain"`. `effects` is a list, bottom
+layer first. `mountStack` returns the `mountGradient` handle plus
+`setSource`, `setSourceParams`, `setEffects`, `setEffectParams(index, params)`,
+`refreshMedia()` and `getGridInfo()`. `renderStackFrame` renders one frame to
+a detached canvas and `createStackRenderer` is the seekable renderer for
+video export, both with the same options.
 
-Effect sizes are in pixels at 1080p and effects work on a per-cell buffer that is identical at every output size, so an export matches its preview cell for cell. The [main README](../../README.md#effects) has the details.
+Each effect's `params` array describes its controls the way `shader.params`
+does, with four kinds: float, enum (a string value from `options`), bool and
+colour (a `#rrggbb` string). A `when` field on a param says which other
+param's value makes it relevant, for building UI. `effects` and
+`getEffect(id)` expose the registry, and importing either pulls every effect.
+
+Effect sizes are in pixels at 1080p, and each effect computes one value per
+cell into a buffer that is the same at every output size, so a preview and a
+4K export contain identical cells. The [repository
+README](https://github.com/ugolbck/instantshader#effects) has images, every
+param with its range, and the details of how preview and export line up.
 
 ## Seamless loops
 
 Set `loopSeconds` and the animation repeats exactly, with no visible seam at
-the wrap — the frame at `t` and at `t + loopSeconds` are identical pixel for
+the wrap. The frame at `t` and at `t + loopSeconds` are identical pixel for
 pixel. Built for video export and for backgrounds that must not betray a
 restart.
 
@@ -119,7 +138,7 @@ Notes:
   light video file without slowing the animation down.
 - **`flow` ties its travel speed to the loop length.** It animates by
   translating in a straight line through a noise field that tiles, and it
-  covers exactly one tile per cycle — so a short loop flows fast and a long
+  covers exactly one tile per cycle, so a short loop flows fast and a long
   one flows slowly. The hand-tuned drift rate corresponds to a period around
   60–90s; below ~30s the currents move noticeably faster than the look was
   designed for. Compensate with `speed` rather than by shortening the loop.
@@ -130,7 +149,7 @@ Notes:
   slow oscillations (petal breathing ~20s, fan lean ~30s, petal flex ~42s)
   layered over a noise wander. Each oscillation holds still once the loop is
   shorter than about half its own period, so below ~10s the wander is the only
-  thing left moving. `colorflow` is unaffected — it always fits at least one
+  thing left moving. `colorflow` is unaffected. It always fits at least one
   full cycle into the loop, flowing faster on a short one.
 - `halo`, `dune` and `whorl` always complete at least one full cycle of their
   main motion per loop, so a short loop simply runs them faster.

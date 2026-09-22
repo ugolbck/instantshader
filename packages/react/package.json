@@ -1,7 +1,7 @@
 {
   "name": "@instantshader/react",
-  "version": "0.6.0",
-  "description": "React bindings for InstantShader animated WebGL gradients.",
+  "version": "0.6.1",
+  "description": "React components for InstantShader: animated WebGL gradients and image effects.",
   "type": "module",
   "license": "MIT",
   "repository": {

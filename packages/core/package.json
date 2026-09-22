@@ -1,7 +1,7 @@
 {
   "name": "instantshader",
-  "version": "0.6.0",
-  "description": "Animated WebGL gradient shaders. Zero dependencies.",
+  "version": "0.6.1",
+  "description": "Animated WebGL gradient shaders, plus dither, pixelate, halftone and ASCII effects. Zero dependencies.",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -33,7 +33,11 @@
     "gradient",
     "mesh-gradient",
     "animated-gradient",
-    "background"
+    "background",
+    "dither",
+    "halftone",
+    "pixelate",
+    "ascii"
   ],
   "scripts": {
     "build": "tsdown",

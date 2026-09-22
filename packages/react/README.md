@@ -4,8 +4,9 @@
 
 React bindings for [instantshader](https://www.npmjs.com/package/instantshader), a
 zero-dependency animated WebGL gradient engine. Drop a `<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>` or
-`<Whorl>` component into any sized wrapper to mount a live, animated gradient. Built by
-[InstantGradient](https://instantgradient.com/app).
+`<Whorl>` component into any sized wrapper to mount a live, animated gradient, and
+add dither, pixelate, halftone or ASCII effects over it or over your own image.
+Built by [InstantGradient](https://instantgradient.com/app).
 
 ## Install
 
@@ -56,7 +57,43 @@ import { Bloom } from "@instantshader/react";
 
 See the [`instantshader` README](https://www.npmjs.com/package/instantshader)
 for what each param does and for the shader defs themselves (re-exported from
-here as `flow`, `beam` and `bloom`).
+here as `flow`, `beam`, `bloom`, `halo`, `strata`, `dune` and `whorl`).
+
+## Effects
+
+Every shader component takes an `effects` prop: a list of layers, bottom
+first, each an effect def with its params.
+
+```tsx
+import { Bloom, dither } from "@instantshader/react";
+
+<Bloom
+  colors={["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"]}
+  effects={[{ effect: dither, params: { pattern: "blueNoise", colorMode: "palette", levels: 4 } }]}
+  style={{ width: "100%", height: "100%" }}
+/>;
+```
+
+`<ShaderStack>` takes a `source` instead of a fixed shader, which is how you
+put effects over an image. Any `<img>`, `<canvas>` or `<video>` element works
+as `media`:
+
+```tsx
+import { ShaderStack, halftone } from "@instantshader/react";
+
+<ShaderStack
+  source={{ kind: "media", media: img, fit: "cover" }}
+  colors={["#111111", "#f4f1ea"]}
+  effects={[{ effect: halftone, params: { size: 20, angle: 30 } }]}
+  style={{ width: "100%", height: "100%" }}
+/>;
+```
+
+Changing `effects` or their params updates the canvas in place. A new
+`source`, `seed`, `background` or `fontFamily` remounts it. The four effect
+defs (`pixelate`, `dither`, `halftone`, `ascii`) are re-exported from here,
+and the [repository README](https://github.com/ugolbck/instantshader#effects)
+lists every param with its range.
 
 ## Seamless loops
 
@@ -67,7 +104,7 @@ at the wrap:
 <Flow colors={colors} loopSeconds={30} style={{ width: "100%", height: "100%" }} />
 ```
 
-15–60s is the comfortable range, and the period is measured in animation
-seconds (so it interacts with `speed`). See the
+15 to 60s is the comfortable range, and the period is measured in animation
+seconds, so it interacts with `speed`. See the
 [`instantshader` README](https://www.npmjs.com/package/instantshader) for the
 full details.

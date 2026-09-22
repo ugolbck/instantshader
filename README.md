@@ -214,14 +214,18 @@ handle.setParams(dune.randomParams(Math.random));
 
 ## Effects
 
-An effect redraws an existing picture: a gradient from this library, or your own image. Four ship today.
+An effect redraws a picture. The picture can be one of the shaders above or an image you supply, and the result still loops and exports like everything else.
 
-| Effect | What it does | Motion |
-| --- | --- | --- |
-| `pixelate` | Flat cells, optional posterize and grid lines | none of its own |
-| `dither` | Bayer 2x2, 4x4, 8x8 or blue noise, 2 to 8 levels | `shimmer` |
-| `halftone` | Dots, lines or squares on a square or hex grid at any angle | `pulse` |
-| `ascii` | Characters picked by brightness, six character sets | `cycle` |
+<table>
+  <tr>
+    <td width="25%"><img src=".github/assets/pixelate.jpg" alt="Pixelate" /><br /><b>Pixelate</b> <code>pixelate</code><br />Flat cells, with optional posterize and grid lines.</td>
+    <td width="25%"><img src=".github/assets/dither.jpg" alt="Dither" /><br /><b>Dither</b> <code>dither</code><br />Bayer or blue-noise patterns, two to eight levels.</td>
+    <td width="25%"><img src=".github/assets/halftone.jpg" alt="Halftone" /><br /><b>Halftone</b> <code>halftone</code><br />Dots, lines or squares on a square or hex screen.</td>
+    <td width="25%"><img src=".github/assets/ascii.jpg" alt="ASCII" /><br /><b>ASCII</b> <code>ascii</code><br />Characters picked by brightness, six sets.</td>
+  </tr>
+</table>
+
+Over a shader, in React:
 
 ```tsx
 import { Bloom, dither } from "@instantshader/react";
@@ -234,7 +238,7 @@ import { Bloom, dither } from "@instantshader/react";
 />
 ```
 
-Over your own image, in vanilla JS:
+Over your own image, in vanilla JS. Any `<img>`, `<canvas>`, `<video>` or `ImageBitmap` works as `media`:
 
 ```ts
 import { mountStack, halftone } from "instantshader";
@@ -250,13 +254,81 @@ mountStack(el, {
 });
 ```
 
-In React that is `<ShaderStack source={{ kind: "media", media: img }} ... />`. Layers stack bottom to top, so `effects` can hold several.
+In React that is `<ShaderStack source={{ kind: "media", media: img }} colors={...} effects={...} />`. `effects` is a list, bottom layer first, so effects can stack.
 
-**Color modes.** Dither, halftone and ASCII share a `colorMode` param: `source` keeps the picture's colors, `duotone` uses `ink` and `paper`, `palette` maps tone through `colors`. Over a gradient, palette mode keeps the gradient's own color layout, and a dither with `levels` equal to the number of colors outputs exactly those colors and nothing else.
+### Effect params
 
-**The export matches the preview.** Sizes are in pixels at 1080p, not in screen pixels. Every effect computes one value per cell into a small buffer whose size depends only on its params and the aspect ratio, and each output size paints that same buffer. A 900px preview and a 3840x2160 export contain the same cells with the same values; 1080p-class and 4K-class exports are pixel-exact, and the preview is that export downscaled in linear light, so a dither too fine for the preview to resolve still shows the right brightness. `getGridInfo()` on the handle reports output pixels per cell if you want to warn about that case.
+Same rules as shader params: pass a subset, the rest keep their defaults. Sizes are in pixels at 1080p, so a `size` of 4 is 4px cells in a 1920x1080 export and 8px cells at 4K, with the same number of cells in both.
 
-Export works as before, with `createStackRenderer` in place of `createRenderer`:
+Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (map tone through `colors`). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout, and a dither with `levels` set to the number of colours outputs those colours and nothing else.
+
+<details>
+<summary><b>Pixelate</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `size` | 2 – 160 | 24 | Cell size |
+| `levels` | 0 – 16 | 0 | Colours per channel. 0 keeps full colour |
+| `gap` | 0 – 0.4 | 0 | Grid lines, as a fraction of the cell |
+| `gapColor` | colour | `#000000` | Colour of the grid lines |
+
+</details>
+
+<details>
+<summary><b>Dither</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `pattern` | `bayer2`, `bayer4`, `bayer8`, `blueNoise` | `bayer4` | Threshold pattern |
+| `size` | 1 – 16 | 4 | Cell size |
+| `levels` | 2 – 8 | 2 | Output levels per channel, or along the tone scale |
+| `bias` | -0.5 – 0.5 | 0 | Shifts every tone before quantizing |
+| `linear` | on/off | off | Threshold in linear light. Physically accurate, but dark gradients lose detail |
+| `shimmer` | 0 – 12 | 0 | Pattern jumps per second. 0 is static |
+| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above |
+
+Floyd-Steinberg and the other error-diffusion dithers are not included. They are sequential, so a fragment shader cannot run them. Blue noise is the pattern that looks closest.
+
+</details>
+
+<details>
+<summary><b>Halftone</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `grid` | `square`, `hex` | `square` | Screen layout |
+| `shape` | `dot`, `line`, `square` | `dot` | What each cell draws |
+| `size` | 6 – 160 | 28 | Screen pitch |
+| `angle` | 0 – 180 | 45 | Screen angle, in degrees |
+| `radius` | 0.2 – 1.5 | 1 | Shape size. Above 1, shapes merge in dark areas |
+| `softness` | 0 – 1 | 0 | Blurs shape edges |
+| `contrast` | 0 – 2 | 1 | Tone contrast before sizing the shapes |
+| `pulse` | 0 – 1 | 0 | Shapes swell and shrink in a wave across the frame |
+| `colorMode`, `ink`, `paper`, `invert` | | `duotone` | See above. `paper` fills the gaps in every mode |
+
+</details>
+
+<details>
+<summary><b>ASCII</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `charset` | `standard`, `dense`, `blocks`, `minimal`, `binary`, `katakana` | `standard` | Character set |
+| `size` | 8 – 96 | 24 | Character height |
+| `smooth` | on/off | on | Dithers between neighbouring characters so gradients don't band |
+| `cycle` | 0 – 12 | 0 | Character re-rolls per second. 0 is static |
+| `cycleAmount` | 0 – 1 | 0.3 | How far a re-roll can move along the character ramp |
+| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above. `paper` is the background in every mode |
+
+Characters come from the system monospace font unless you pass `fontFamily` to the mount. Load a custom font with `document.fonts.load` first.
+
+</details>
+
+### The export matches the preview
+
+Effects compute one value per cell into a small buffer whose size depends only on the params and the aspect ratio, and every output size paints that same buffer. A 900px preview and a 3840x2160 export contain the same cells with the same values. 1080p and 4K exports (and their square and portrait equivalents) are pixel-exact. Other sizes, the preview included, are the export downscaled in linear light, so a dither too fine for a small preview to resolve still shows the right brightness. `getGridInfo()` on the handle reports output pixels per cell if you want to warn users about that case.
+
+Video export works as before, with `createStackRenderer` in place of `createRenderer`:
 
 ```ts
 const stack = createStackRenderer({ canvas, source, effects, colors, seed, loopSeconds: 30 });
@@ -265,7 +337,7 @@ for (let f = 0; f < frames; f++) {
 }
 ```
 
-Effect motion follows the same loop rules as the generators, so a looping stack is exactly periodic. Error-diffusion dithers such as Floyd-Steinberg are not included: they are sequential and cannot run in a fragment shader. Blue noise is the pattern that looks closest.
+Effect motion follows the same loop rules as the shaders, so a looping stack repeats exactly.
 
 ## API
 
@@ -293,9 +365,13 @@ It returns a handle:
 | `canvas` | The underlying `<canvas>` element |
 | `dispose()` | Stop rendering and release the WebGL context |
 
+### `mountStack(container, options)`
+
+Like `mountGradient`, with a `source` (`{ kind: "generator", shader, params }` or `{ kind: "media", media, fit }`) in place of `shader`, plus `effects`, `background` (behind contain-fit media, default black) and `fontFamily`. The handle adds `setSource`, `setSourceParams`, `setEffects`, `setEffectParams(index, params)`, `refreshMedia()` (re-upload a video element's current frame) and `getGridInfo()`. `renderStackFrame` and `createStackRenderer` take the same options for one-shot and export use.
+
 ### React props
 
-`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>` take `colors`, `params`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it.
+`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
 
 To pick the shader dynamically, use the generic component:
 

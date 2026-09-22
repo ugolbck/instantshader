@@ -1,5 +1,13 @@
 # instantshader
 
+## 0.6.1
+
+### Patch Changes
+
+- README: images and a full param table for every effect, and effect
+  documentation in the package READMEs. Package descriptions and keywords
+  now mention the effects.
+
 ## 0.6.0
 
 ### Minor Changes
