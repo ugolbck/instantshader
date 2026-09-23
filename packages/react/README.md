@@ -42,6 +42,11 @@ One component per shader, each a thin wrapper over the same props:
 | `<Strata>` | Stacked cut-paper layers with soft shadows. | `scale`, `layers`, `warp`, `ridges`, `stretch`, `depth`, `blend`, `angle`, `grain` |
 | `<Dune>` | Overlapping crests, crisp on top and airbrushed below. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
 | `<Whorl>` | A spiral of curved blades, positionable with `x` / `y`. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
+| `<Caustic>` | Sunlight through water: a bright net over a soft floor. | `waves`, `scale`, `ripple`, `depth`, `light`, `grain` |
+| `<Lava>` | A lava lamp; blobs drift, touch and fuse. | `blobs`, `size`, `merge`, `goo`, `stretch`, `grain` |
+| `<Silk>` | Satin folds with a highlight along the threads. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
+| `<Aurora>` | Curtains of light with a ragged fringe and rays. | `curtains`, `height`, `waves`, `rays`, `glow`, `angle`, `grain` |
+| `<Ripple>` | Op-art stripes folded by travelling waves. | `bands`, `density`, `warp`, `waves`, `swell`, `angle`, `grain` |
 
 ```tsx
 import { Bloom } from "@instantshader/react";
@@ -57,7 +62,8 @@ import { Bloom } from "@instantshader/react";
 
 See the [`instantshader` README](https://www.npmjs.com/package/instantshader)
 for what each param does and for the shader defs themselves (re-exported from
-here as `flow`, `beam`, `bloom`, `halo`, `strata`, `dune` and `whorl`).
+here as `flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `caustic`,
+`lava`, `silk`, `aurora` and `ripple`).
 
 ## Effects
 
