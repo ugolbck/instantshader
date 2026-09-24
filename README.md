@@ -96,11 +96,17 @@ The canvas tracks the container's size by itself and renders at the device pixel
     <td><img src=".github/assets/silk.jpg" alt="Silk" /><br /><b>Silk</b> <code>silk</code><br />Satin folds with a highlight running along the threads.</td>
   </tr>
   <tr>
+    <td><img src=".github/assets/wisp.jpg" alt="Wisp" /><br /><b>Wisp</b> <code>wisp</code><br />Molten threads on dark, with hot beads and sparks.</td>
+    <td><img src=".github/assets/nacre.jpg" alt="Nacre" /><br /><b>Nacre</b> <code>nacre</code><br />Glassy liquid folds whose colour shifts on every slope.</td>
+    <td><img src=".github/assets/burst.jpg" alt="Burst" /><br /><b>Burst</b> <code>burst</code><br />Thin rays fanning out of a dark core.</td>
+    <td><img src=".github/assets/glint.jpg" alt="Glint" /><br /><b>Glint</b> <code>glint</code><br />A shoal of spinning shards streaming along a current.</td>
+  </tr>
+  <tr>
     <td colspan="4" align="center"><b>Your palette</b>: try every look with your own colours in the <a href="https://instantgradient.com/app">live editor</a>.</td>
   </tr>
 </table>
 
-Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`).
+Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`, `wisp`, `nacre`, `burst`, `glint`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`, `<Wisp>`, `<Nacre>`, `<Burst>`, `<Glint>`).
 
 ### Params
 
@@ -212,12 +218,65 @@ The default is the horizon composition (big disc, mostly below the frame). For a
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
-| `scale` | 0.5 – 2.5 | 1 | Fold size |
+| `scale` | 0.3 – 2.5 | 1 | Fold size |
 | `folds` | 0 – 1 | 0.6 | `0` is rumpled cloth, `1` long parallel drapery |
 | `depth` | 0.2 – 2 | 1 | Relief height; how steeply the folds shade |
 | `warp` | 0 – 1 | 0.5 | Bends the folds so they gather and fork |
 | `sheen` | 0 – 1 | 0.6 | Satin highlight strength |
 | `light` | 0 – 360 | 20 | Light direction relative to the folds. `0` and `180` rake across them, `90` and `270` flatten the relief |
+
+Silk's `grain` goes up to 0.5; at `sheen: 0` with heavy grain it is matte cloth.
+
+</details>
+
+<details>
+<summary><b>Wisp</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `scale` | 0.5 – 2.5 | 1.2 | How tightly the threads wander |
+| `width` | 0.3 – 2 | 1 | Thread thickness, core and glow together |
+| `glow` | 0 – 1 | 0.6 | Coloured glow around each thread |
+| `sparks` | 0 – 1 | 0.6 | Hot beads along the threads and at crossings |
+
+</details>
+
+<details>
+<summary><b>Nacre</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `scale` | 0.4 – 2 | 0.9 | Lobe size |
+| `flow` | 0 – 1 | 0.5 | Domain warp: `0` round pools, `1` pulled liquid |
+| `crease` | 0 – 1 | 0.6 | Thin sharp fold lines between the lobes |
+| `depth` | 0.2 – 2 | 1 | Relief height, and so how far the colour shifts on slopes |
+| `iridescence` | 0 – 1 | 0.6 | How far along the ramp a slope walks. `0` is a plain lit gradient |
+| `light` | 0 – 360 | 40 | Light direction, in degrees |
+
+</details>
+
+<details>
+<summary><b>Burst</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `rays` | 0 – 1 | 0.6 | Ray contrast: `0` soft sectors, `1` hard thin rays |
+| `core` | 0.2 – 2 | 1 | Radius of the dark core |
+| `x`, `y` | -1 – 1 | 0.1, 0.05 | Centre position; `0` is the middle, `±1` the frame edge |
+| `spin` | 0 – 1 | 0.5 | Rotation rate. The ray field holds still on loops under 12 s and only streams outward |
+
+</details>
+
+<details>
+<summary><b>Glint</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `size` | 0.01 – 0.06 | 0.03 | Shard length, in frame heights |
+| `density` | 0.2 – 1 | 0.6 | How many cells hold a shard |
+| `bend` | 0 – 1 | 0.5 | How far the current arcs across the frame |
+| `angle` | 0 – 360 | 10 | Direction of the current |
+| `speed` | 0.3 – 2 | 1 | Streaming speed when not looping; a loop always travels one pattern period |
 
 </details>
 
@@ -388,7 +447,7 @@ Like `mountGradient`, with a `source` (`{ kind: "generator", shader, params }` o
 
 ### React props
 
-`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
+`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`, `<Wisp>`, `<Nacre>`, `<Burst>`, `<Glint>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
 
 To pick the shader dynamically, use the generic component:
 

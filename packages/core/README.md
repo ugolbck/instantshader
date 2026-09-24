@@ -41,6 +41,10 @@ tree-shake away.
 | `dune` | Overlapping crests rolling across the frame, back to front. Each has one crisp top edge and airbrushes away below it; neighbouring crests slide against each other. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
 | `whorl` | A logarithmic spiral of curved blades, each with one sharp leading edge and a soft fade behind it. `x` / `y` place the centre anywhere, including off-frame. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
 | `silk` | Satin folds lit from one side, with an anisotropic sheen that streaks along the threads. The palette is printed on the cloth; light only reveals the relief. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
+| `wisp` | Molten threads on a dark ground: two families of noise zero-lines drawn as hair-thin luminous curves with white-hot cores, coloured glow, beads and sparks. | `scale`, `width`, `glow`, `sparks`, `grain` |
+| `nacre` | Glassy liquid folds whose colour walks through the neighbouring palette stops on every slope, the way mother of pearl shifts with the viewing angle. Only ever shows the ramp's own colours. | `scale`, `flow`, `crease`, `depth`, `iridescence`, `light`, `grain` |
+| `burst` | Thin grainy rays fanning out of a dark core, each ray its own stop, lit outward and slowly turning. | `rays`, `core`, `x`, `y`, `spin`, `grain` |
+| `glint` | A shoal of small angular shards streaming along one curved current on dark, spinning and flashing, each edge fringed with colour. The only particle look. | `size`, `density`, `bend`, `angle`, `speed`, `grain` |
 
 Previews of every look, with full param ranges, are in the
 [repository README](https://github.com/ugolbck/instantshader#readme).
@@ -152,7 +156,9 @@ Notes:
   shorter than about half its own period, so below ~10s the wander is the only
   thing left moving. `colorflow` is unaffected. It always fits at least one
   full cycle into the loop, flowing faster on a short one.
-- `halo`, `dune` and `whorl` always complete at least one full cycle of their
-  main motion per loop, so a short loop simply runs them faster.
+- `halo`, `dune`, `whorl` and `burst` always complete at least one full cycle
+  of their main motion per loop, so a short loop simply runs them faster;
+  `burst` freezes its ray field's turn under 12 s. `glint` travels one
+  pattern period per loop, half a period under 12 s.
 - Any loop necessarily revisits the same state every N seconds; a long period
   is what buys the impression of never repeating.

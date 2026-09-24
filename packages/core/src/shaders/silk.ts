@@ -135,7 +135,7 @@ export const silk: ShaderDef = {
   label: "Silk",
   fragment: FRAGMENT,
   params: [
-    { key: "scale", label: "Scale", min: 0.5, max: 2.5, step: 0.05, default: 1 },
+    { key: "scale", label: "Scale", min: 0.3, max: 2.5, step: 0.05, default: 1 },
     // Anisotropy: 0 is rumpled cloth, 1 is long parallel drapery.
     { key: "folds", label: "Folds", min: 0, max: 1, step: 0.01, default: 0.6 },
     // Relief height: how steep the folds shade.
@@ -147,7 +147,8 @@ export const silk: ShaderDef = {
     // Light azimuth, relative to the across-fold direction: 0 and 180 rake
     // across the folds, 90 and 270 skim along them and flatten the relief.
     { key: "light", label: "Light", min: 0, max: 360, step: 1, default: 20 },
-    { key: "grain", label: "Grain", min: 0, max: 0.3, step: 0.01, default: 0.06 },
+    // Up to 0.5: the matte, grainy satin look is grain-heavy by design.
+    { key: "grain", label: "Grain", min: 0, max: 0.5, step: 0.01, default: 0.06 },
   ],
   randomParams(rand) {
     return {

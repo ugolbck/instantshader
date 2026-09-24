@@ -7,11 +7,15 @@ import { strata } from "./shaders/strata";
 import { dune } from "./shaders/dune";
 import { whorl } from "./shaders/whorl";
 import { silk } from "./shaders/silk";
+import { wisp } from "./shaders/wisp";
+import { nacre } from "./shaders/nacre";
+import { burst } from "./shaders/burst";
+import { glint } from "./shaders/glint";
 
 // Order here is alphabetical-by-launch and carries no meaning for
 // consumers — display order (UI ordering, grid layout, etc) is a concern
 // for whatever's rendering the registry, not this package.
-export const shaders: readonly ShaderDef[] = [flow, beam, bloom, halo, strata, dune, whorl, silk];
+export const shaders: readonly ShaderDef[] = [flow, beam, bloom, halo, strata, dune, whorl, silk, wisp, nacre, burst, glint];
 
 export function getShader(id: string): ShaderDef | undefined {
   return shaders.find((s) => s.id === id);

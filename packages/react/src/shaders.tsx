@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { flow, beam, bloom, halo, strata, dune, whorl, silk } from "instantshader";
+import { flow, beam, bloom, halo, strata, dune, whorl, silk, wisp, nacre, burst, glint } from "instantshader";
 import { ShaderCanvas } from "./ShaderCanvas";
 import type { ShaderCanvasProps } from "./ShaderCanvas";
 
@@ -35,4 +35,20 @@ export function Whorl(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
 
 export function Silk(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
   return <ShaderCanvas shader={silk} {...props} />;
+}
+
+export function Wisp(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
+  return <ShaderCanvas shader={wisp} {...props} />;
+}
+
+export function Nacre(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
+  return <ShaderCanvas shader={nacre} {...props} />;
+}
+
+export function Burst(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
+  return <ShaderCanvas shader={burst} {...props} />;
+}
+
+export function Glint(props: Omit<ShaderCanvasProps, "shader">): ReactElement {
+  return <ShaderCanvas shader={glint} {...props} />;
 }
