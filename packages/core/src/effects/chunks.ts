@@ -174,6 +174,13 @@ void main() {
  * over another effect, there is no ramp coordinate to recover and tone stays
  * luma (a gradient map).
  *
+ * paletteStop() snaps a tone to the nearest of the palette's stops
+ * (u_paletteStops is the stop count). Halftone and ASCII use it in palette
+ * mode: they do not quantize tone the way Dither's `levels` does, so
+ * without the snap, palette mode over a generator handed back the exact
+ * source color and looked identical to source mode. Snapped, each cell is
+ * one of the palette's own colors, flat.
+ *
  * The search is 33 coarse + 17 fine ramp samples. That is affordable
  * because tone is evaluated per cell or per lattice point, not per pixel.
  * The ends snap to exactly 0 and 1: generators clamp their coordinate, so
@@ -186,6 +193,7 @@ uniform vec3 u_ink;
 uniform vec3 u_paper;
 uniform float u_invert;
 uniform float u_sourceIsRamp;   // 1 when this layer reads a generator directly
+uniform float u_paletteStops;   // number of colors in the palette
 float rampPosition(vec3 c) {
   float best = 0.0;
   float bd = 1e9;
@@ -210,6 +218,10 @@ bool toneIsRamp() { return u_colorMode > 1.5 && u_sourceIsRamp > 0.5; }
 float toneOf(vec3 c) {
   float t = toneIsRamp() ? rampPosition(c) : luma(c);
   return u_invert > 0.5 ? 1.0 - t : t;
+}
+vec3 paletteStop(float tone) {
+  float n = max(u_paletteStops - 1.0, 1.0);
+  return palette(floor(tone * n + 0.5) / n);
 }
 vec3 colorize(float tone, vec3 src) {
   if (u_colorMode < 0.5) return src;

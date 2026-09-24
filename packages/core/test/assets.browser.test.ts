@@ -6,7 +6,7 @@
 
 import { describe, it } from "vitest";
 import { commands } from "vitest/browser";
-import { ascii, aurora, bloom, caustic, dither, dune, flow, halftone, halo, lava, pixelate, renderStackFrame, ripple, silk } from "../src/index";
+import { ascii, bloom, dither, dune, flow, halftone, halo, pixelate, renderStackFrame, silk } from "../src/index";
 import type { EffectLayer, Source } from "../src/index";
 
 const ENABLED = Boolean((import.meta as unknown as { env: Record<string, string> }).env.VITE_ASSETS);
@@ -34,15 +34,7 @@ describe.skipIf(!ENABLED)("readme assets", () => {
   }, 120_000);
 
   it("renders one image per newer look", async () => {
-    await save("caustic", { kind: "generator", shader: caustic }, [],
-      ["#081A3D", "#123A73", "#1E63AC", "#4C9EDB", "#AEDAF7"], 1, 0);
-    await save("lava", { kind: "generator", shader: lava }, [],
-      ["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"], 7, 3000);
     await save("silk", { kind: "generator", shader: silk }, [],
       ["#4f46e5", "#ec4899", "#22d3ee"], 1, 0);
-    await save("aurora", { kind: "generator", shader: aurora }, [],
-      ["#00e5a0", "#3d5afe", "#b388ff"], 7, 3000);
-    await save("ripple", { kind: "generator", shader: ripple, params: { bands: 5 } }, [],
-      ["#FF2ED1", "#00F5A0", "#FFE600", "#00D1FF", "#FF4D4D"], 13, 6000);
   }, 120_000);
 });

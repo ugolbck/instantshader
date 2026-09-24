@@ -93,20 +93,14 @@ The canvas tracks the container's size by itself and renders at the device pixel
     <td><img src=".github/assets/strata.jpg" alt="Strata" /><br /><b>Strata</b> <code>strata</code><br />Stacked cut-paper layers with soft shadows.</td>
     <td><img src=".github/assets/dune.jpg" alt="Dune" /><br /><b>Dune</b> <code>dune</code><br />Overlapping crests, crisp on top, airbrushed below.</td>
     <td><img src=".github/assets/whorl.jpg" alt="Whorl" /><br /><b>Whorl</b> <code>whorl</code><br />A spiral of curved blades you can place anywhere.</td>
-    <td><img src=".github/assets/caustic.jpg" alt="Caustic" /><br /><b>Caustic</b> <code>caustic</code><br />Sunlight through water: a bright net over a soft floor.</td>
-  </tr>
-  <tr>
-    <td><img src=".github/assets/lava.jpg" alt="Lava" /><br /><b>Lava</b> <code>lava</code><br />A lava lamp. Blobs drift, touch and fuse.</td>
     <td><img src=".github/assets/silk.jpg" alt="Silk" /><br /><b>Silk</b> <code>silk</code><br />Satin folds with a highlight running along the threads.</td>
-    <td><img src=".github/assets/aurora.jpg" alt="Aurora" /><br /><b>Aurora</b> <code>aurora</code><br />Curtains of light with a ragged fringe and rays.</td>
-    <td><img src=".github/assets/ripple.jpg" alt="Ripple" /><br /><b>Ripple</b> <code>ripple</code><br />Op-art stripes folded by travelling waves.</td>
   </tr>
   <tr>
     <td colspan="4" align="center"><b>Your palette</b>: try every look with your own colours in the <a href="https://instantgradient.com/app">live editor</a>.</td>
   </tr>
 </table>
 
-Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `caustic`, `lava`, `silk`, `aurora`, `ripple`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Caustic>`, `<Lava>`, `<Silk>`, `<Aurora>`, `<Ripple>`).
+Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`).
 
 ### Params
 
@@ -214,32 +208,6 @@ The default is the horizon composition (big disc, mostly below the frame). For a
 </details>
 
 <details>
-<summary><b>Caustic</b></summary>
-
-| Param | Range | Default | What it does |
-| --- | --- | --- | --- |
-| `waves` | 3 – 8 | 6 | Interfering wave sources; fewer gives a more regular net |
-| `scale` | 0.5 – 2.5 | 1 | Cell size of the net |
-| `ripple` | 0 – 1 | 0.6 | Wave steepness; how far the floor gradient wanders |
-| `depth` | 0 – 1 | 0.7 | Water depth. `0` is a flat floor, `1` folds the light into the sharpest lines |
-| `light` | 0 – 1 | 0.8 | Brightness of the net |
-
-</details>
-
-<details>
-<summary><b>Lava</b></summary>
-
-| Param | Range | Default | What it does |
-| --- | --- | --- | --- |
-| `blobs` | 2 – 8 | 6 | Number of blobs |
-| `size` | 0.1 – 0.5 | 0.22 | Blob radius, in frame heights |
-| `merge` | 0.3 – 0.9 | 0.5 | Low: fat blobs that fuse into one mass. High: small separate drops |
-| `goo` | 0 – 1 | 0.85 | Edge: `1` is a razor silhouette, `0` a soft cloud |
-| `stretch` | 1 – 2.5 | 1.4 | Vertical elongation of blobs and orbits |
-
-</details>
-
-<details>
 <summary><b>Silk</b></summary>
 
 | Param | Range | Default | What it does |
@@ -250,34 +218,6 @@ The default is the horizon composition (big disc, mostly below the frame). For a
 | `warp` | 0 – 1 | 0.5 | Bends the folds so they gather and fork |
 | `sheen` | 0 – 1 | 0.6 | Satin highlight strength |
 | `light` | 0 – 360 | 20 | Light direction relative to the folds. `0` and `180` rake across them, `90` and `270` flatten the relief |
-
-</details>
-
-<details>
-<summary><b>Aurora</b></summary>
-
-| Param | Range | Default | What it does |
-| --- | --- | --- | --- |
-| `curtains` | 1 – 3 | 2 | Number of curtains |
-| `height` | 0.15 – 1 | 0.45 | How far the light climbs above the fringe |
-| `waves` | 0 – 1 | 0.6 | Fringe waviness: `0` is level, `1` folded |
-| `rays` | 0 – 1 | 0.6 | Vertical striation: `0` is a smooth glow, `1` distinct rays |
-| `glow` | 0 – 1 | 0.5 | Brightness |
-| `angle` | 0 – 360 | 0 | Rotation of the whole sky; `0` hangs the curtains upright |
-
-</details>
-
-<details>
-<summary><b>Ripple</b></summary>
-
-| Param | Range | Default | What it does |
-| --- | --- | --- | --- |
-| `bands` | 2 – 8 | 4 | Colours per cycle: the ramp is walked forward through this many stops and back. Independent of the palette size |
-| `density` | 4 – 30 | 12 | Stripes per frame height |
-| `warp` | 0 – 1 | 0.5 | How far the waves fold the bands |
-| `waves` | 0.5 – 2 | 1 | Wave frequency: low is one big fold, high a shiver |
-| `swell` | 0 – 1 | 0.5 | Alternate bands fatten and thin in a slow wave |
-| `angle` | 0 – 360 | 0 | Stripe direction; `0` is horizontal |
 
 </details>
 
@@ -337,7 +277,7 @@ In React that is `<ShaderStack source={{ kind: "media", media: img }} colors={..
 
 Same rules as shader params: pass a subset, the rest keep their defaults. Sizes are in pixels at 1080p, so a `size` of 4 is 4px cells in a 1920x1080 export and 8px cells at 4K, with the same number of cells in both.
 
-Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (map tone through `colors`). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout, and a dither with `levels` set to the number of colours outputs those colours and nothing else.
+Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (the palette's colours). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout: dither outputs `levels` steps of the ramp (set `levels` to the number of colours to get exactly those), and halftone and ASCII colour each dot or glyph with the nearest palette stop, flat.
 
 <details>
 <summary><b>Pixelate</b></summary>
@@ -375,13 +315,13 @@ Floyd-Steinberg and the other error-diffusion dithers are not included. They are
 | --- | --- | --- | --- |
 | `grid` | `square`, `hex` | `square` | Screen layout |
 | `shape` | `dot`, `line`, `square` | `dot` | What each cell draws |
-| `size` | 6 – 160 | 28 | Screen pitch |
+| `size` | 6 – 160 | 10 | Screen pitch |
 | `angle` | 0 – 180 | 45 | Screen angle, in degrees |
-| `radius` | 0.2 – 1.5 | 1 | Shape size. Above 1, shapes merge in dark areas |
-| `softness` | 0 – 1 | 0 | Blurs shape edges |
-| `contrast` | 0 – 2 | 1 | Tone contrast before sizing the shapes |
+| `radius` | 0.2 – 1.5 | 1.4 | Shape size. Below about 1.2 the screen reads washed out; above 1, shapes merge in dark areas |
+| `softness` | 0 – 1 | 0.1 | Blurs shape edges |
+| `contrast` | 0 – 2 | 1.15 | Tone contrast before sizing the shapes |
 | `pulse` | 0 – 1 | 0 | Shapes swell and shrink in a wave across the frame |
-| `colorMode`, `ink`, `paper`, `invert` | | `duotone` | See above. `paper` fills the gaps in every mode |
+| `colorMode`, `ink`, `paper`, `invert` | | `palette` | See above. `paper` fills the gaps in every mode |
 
 </details>
 
@@ -448,7 +388,7 @@ Like `mountGradient`, with a `source` (`{ kind: "generator", shader, params }` o
 
 ### React props
 
-`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Caustic>`, `<Lava>`, `<Silk>`, `<Aurora>`, `<Ripple>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
+`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
 
 To pick the shader dynamically, use the generic component:
 

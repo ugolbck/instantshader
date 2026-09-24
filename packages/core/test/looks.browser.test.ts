@@ -2,12 +2,12 @@
 // contact sheets to packages/core/.visual/looks/. Skipped unless VITE_LOOKS
 // names the shader ids to render ("all" for every registered one):
 //
-//   VITE_LOOKS=caustic,lava npx vitest run --project browser test/looks.browser.test.ts
+//   VITE_LOOKS=silk,flow npx vitest run --project browser test/looks.browser.test.ts
 //
 // Per look:
 //   <id>.png       4 palettes x 3 (seed, time) cells at 480x270
 //   <id>-hd.png    one 1920x1080 frame
-//   <id>-fx.png    dither, halftone and ascii over it at 960x540
+//   <id>-fx.png    dither, halftone (defaults), ascii source and palette over it at 960x540
 
 import { describe, it } from "vitest";
 import { commands } from "vitest/browser";
@@ -82,8 +82,9 @@ describe.skipIf(IDS.length === 0)("look sheets", () => {
 
       const fxList: EffectLayer[][] = [
         [{ effect: dither, params: { pattern: "blueNoise", size: 3, colorMode: "palette", levels: 4 } }],
-        [{ effect: halftone, params: { size: 14, angle: 30, ink: "#f4f1ea", paper: "#0b0b12", invert: true } }],
+        [{ effect: halftone, params: {} }],
         [{ effect: ascii, params: { size: 24, colorMode: "source", paper: "#050505" } }],
+        [{ effect: ascii, params: { size: 24, colorMode: "palette", paper: "#050505" } }],
       ];
       const [fx, fctx] = sheet(1, fxList.length, 960, 540);
       fxList.forEach((effects, r) => {

@@ -40,11 +40,7 @@ tree-shake away.
 | `strata` | Stacked cut-paper sheets, one per palette step, each casting a soft shadow on the one below. `ridges` and `stretch` reshape the relief itself, from round islands to branching spines to long agate bands. | `scale`, `layers`, `warp`, `ridges`, `stretch`, `depth`, `blend`, `angle`, `grain` |
 | `dune` | Overlapping crests rolling across the frame, back to front. Each has one crisp top edge and airbrushes away below it; neighbouring crests slide against each other. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
 | `whorl` | A logarithmic spiral of curved blades, each with one sharp leading edge and a soft fade behind it. `x` / `y` place the centre anywhere, including off-frame. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
-| `caustic` | Sunlight on a pool floor. Seeded waves interfere and the refracted light bunches into a bright net along the folds of the refraction map, drawn from its Jacobian, no texture. The floor underneath is a soft gradient through every stop. | `waves`, `scale`, `ripple`, `depth`, `light`, `grain` |
-| `lava` | A lava lamp. Blobs orbit and fuse as a level set of one implicit field, so two that touch grow a neck instead of overlapping. The first stops are the lamp, the last the blob cores. | `blobs`, `size`, `merge`, `goo`, `stretch`, `grain` |
 | `silk` | Satin folds lit from one side, with an anisotropic sheen that streaks along the threads. The palette is printed on the cloth; light only reveals the relief. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
-| `aurora` | Northern lights: one to three curtains with a ragged bright fringe, light fading upward and torn into vertical rays. The palette flows along each curtain and climbs with altitude. | `curtains`, `height`, `waves`, `rays`, `glow`, `angle`, `grain` |
-| `ripple` | Op-art stripes. Flat bands folded by travelling waves, alternate bands fattening and thinning in a slow swell; the colour cycles through the ramp and back with no seam. | `bands`, `density`, `warp`, `waves`, `swell`, `angle`, `grain` |
 
 Previews of every look, with full param ranges, are in the
 [repository README](https://github.com/ugolbck/instantshader#readme).
@@ -156,9 +152,7 @@ Notes:
   shorter than about half its own period, so below ~10s the wander is the only
   thing left moving. `colorflow` is unaffected. It always fits at least one
   full cycle into the loop, flowing faster on a short one.
-- `halo`, `dune`, `whorl`, `caustic`, `lava` and `ripple` always complete at
-  least one full cycle of their main motion per loop, so a short loop simply
-  runs them faster. `aurora` walks its fringe and rays one noise period per
-  loop, like `flow`.
+- `halo`, `dune` and `whorl` always complete at least one full cycle of their
+  main motion per loop, so a short loop simply runs them faster.
 - Any loop necessarily revisits the same state every N seconds; a long period
   is what buys the impression of never repeating.

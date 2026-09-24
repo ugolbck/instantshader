@@ -60,7 +60,8 @@ void main() {
   } else if (u_colorMode < 1.5) {
     color = u_ink;
   } else {
-    color = palette(toneIsRamp() ? rampPosition(sc) : luma(sc));
+    // Nearest palette stop, flat: see paletteStop() in chunks.ts.
+    color = paletteStop(toneIsRamp() ? rampPosition(sc) : luma(sc));
   }
 
   gl_FragColor = vec4(color, glyph / 255.0);

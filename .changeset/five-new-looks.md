@@ -3,4 +3,4 @@
 "@instantshader/react": minor
 ---
 
-Five new looks: `caustic` (sunlight through water, the net drawn from the refraction map's Jacobian), `lava` (metaball lava lamp), `silk` (satin folds with an anisotropic sheen), `aurora` (curtains with a ragged fringe and rays) and `ripple` (op-art stripes folded by travelling waves). Each has a React component (`<Caustic>`, `<Lava>`, `<Silk>`, `<Aurora>`, `<Ripple>`), loops exactly, and works as a source under the effects.
+New look: `silk`, satin folds lit from one side with an anisotropic sheen along the threads (React: `<Silk>`). Halftone defaults changed to what reads well at a fine pitch: size 10, radius 1.4, softness 0.1, contrast 1.15, palette colours. In palette mode, halftone and ASCII now colour each dot or glyph with the nearest palette stop, flat; over a shader they used to hand back the source colour and looked identical to source mode.

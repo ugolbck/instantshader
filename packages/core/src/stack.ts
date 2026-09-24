@@ -548,6 +548,7 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
     // Lets palette color mode recover the generator's own ramp coordinate
     // instead of falling back to luma. See COLOR_MODE in effects/chunks.ts.
     gl.uniform1f(p.loc("u_sourceIsRamp"), overGenerator ? 1 : 0);
+    gl.uniform1f(p.loc("u_paletteStops"), colors.length);
     gl.uniform2f(p.loc("u_refSize"), ref[0], ref[1]);
     gl.uniform1f(p.loc("u_outputScale"), outputScale(canvas.width, canvas.height));
     if (grid) {

@@ -44,9 +44,11 @@ void main() {
 
   // Ink color. Duotone inks every shape with u_ink (colorize() would mix
   // toward paper by tone, which is dither's meaning of duotone). Palette
-  // colors by the un-inverted tone, so Invert flips sizes and leaves colors.
+  // inks each dot with the nearest palette STOP to the un-inverted tone, so
+  // Invert flips sizes and leaves colors, and the dots are flat palette
+  // colors rather than a copy of the source.
   vec3 color = sc;
-  if (u_colorMode > 1.5) color = palette(toneIsRamp() ? rampPosition(sc) : luma(sc));
+  if (u_colorMode > 1.5) color = paletteStop(toneIsRamp() ? rampPosition(sc) : luma(sc));
   else if (u_colorMode > 0.5) color = u_ink;
 
   gl_FragColor = vec4(color, ink);
@@ -203,14 +205,16 @@ export const halftone: EffectDef = {
       default: "dot",
     },
     // Lattice pitch in reference pixels (px at 1080p).
-    { key: "size", label: "Size", min: 6, max: 160, step: 0.5, default: 28 },
+    { key: "size", label: "Size", min: 6, max: 160, step: 0.5, default: 10 },
     { key: "angle", label: "Angle", min: 0, max: 180, step: 1, default: 45 },
-    // 1 = tone-accurate. Above 1 neighbouring shapes merge in dark areas.
-    { key: "radius", label: "Radius", min: 0.2, max: 1.5, step: 0.01, default: 1 },
-    { key: "softness", label: "Softness", min: 0, max: 1, step: 0.01, default: 0 },
-    { key: "contrast", label: "Contrast", min: 0, max: 2, step: 0.01, default: 1 },
+    // 1 = tone-accurate, but at the default pitch it reads washed out and
+    // empty; 1.4 lets neighbouring shapes merge in the darks, which is what
+    // makes the picture read.
+    { key: "radius", label: "Radius", min: 0.2, max: 1.5, step: 0.01, default: 1.4 },
+    { key: "softness", label: "Softness", min: 0, max: 1, step: 0.01, default: 0.1 },
+    { key: "contrast", label: "Contrast", min: 0, max: 2, step: 0.01, default: 1.15 },
     { key: "pulse", label: "Pulse", min: 0, max: 1, step: 0.01, default: 0 },
-    ...colorModeParams({ mode: "duotone", paperAlways: true }),
+    ...colorModeParams({ mode: "palette", paperAlways: true }),
   ],
   randomParams(rand) {
     const shapes = ["dot", "dot", "line", "square"];
@@ -218,11 +222,11 @@ export const halftone: EffectDef = {
     return {
       grid: rand() < 0.5 ? "square" : "hex",
       shape: shapes[Math.floor(rand() * shapes.length)],
-      size: Math.round(14 + rand() * 50),
+      size: Math.round(8 + rand() * 30),
       angle: Math.round(rand() * 180),
-      radius: 0.8 + rand() * 0.5,
-      softness: rand() < 0.7 ? 0 : rand() * 0.5,
-      contrast: 1,
+      radius: 1.2 + rand() * 0.3,
+      softness: rand() < 0.7 ? 0.1 : rand() * 0.5,
+      contrast: 1.15,
       pulse: 0,
       colorMode: modes[Math.floor(rand() * modes.length)],
       ink: "#111111",
