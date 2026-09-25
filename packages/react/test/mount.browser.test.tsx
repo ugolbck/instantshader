@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { Beam, Bloom, Burst, Dune, Flow, Glint, Halo, Nacre, Silk, Strata, Whorl, Wisp } from "../src/index";
+import { Beam, Bloom, Burst, Dune, Flow, Glint, Halo, Nacre, Silk, Strata, Whorl } from "../src/index";
 
 // Every shader component the package exports, exercised through the exact
 // usage the README documents. A new shader is only really shipped once its
@@ -15,7 +15,6 @@ const COMPONENTS = [
   { name: "Dune", Component: Dune },
   { name: "Whorl", Component: Whorl },
   { name: "Silk", Component: Silk },
-  { name: "Wisp", Component: Wisp },
   { name: "Nacre", Component: Nacre },
   { name: "Burst", Component: Burst },
   { name: "Glint", Component: Glint },

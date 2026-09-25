@@ -11,7 +11,6 @@ export { strata } from "./shaders/strata";
 export { dune } from "./shaders/dune";
 export { whorl } from "./shaders/whorl";
 export { silk } from "./shaders/silk";
-export { wisp } from "./shaders/wisp";
 export { nacre } from "./shaders/nacre";
 export { burst } from "./shaders/burst";
 export { glint } from "./shaders/glint";

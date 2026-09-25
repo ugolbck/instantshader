@@ -6,7 +6,7 @@
 
 import { describe, it } from "vitest";
 import { commands } from "vitest/browser";
-import { ascii, bloom, burst, dither, dune, flow, glint, halftone, halo, nacre, pixelate, renderStackFrame, silk, wisp } from "../src/index";
+import { ascii, bloom, burst, dither, dune, flow, glint, halftone, halo, nacre, pixelate, renderStackFrame, silk } from "../src/index";
 import type { EffectLayer, Source } from "../src/index";
 
 const ENABLED = Boolean((import.meta as unknown as { env: Record<string, string> }).env.VITE_ASSETS);
@@ -36,8 +36,6 @@ describe.skipIf(!ENABLED)("readme assets", () => {
   it("renders one image per newer look", async () => {
     await save("silk", { kind: "generator", shader: silk }, [],
       ["#4f46e5", "#ec4899", "#22d3ee"], 1, 0);
-    await save("wisp", { kind: "generator", shader: wisp }, [],
-      ["#3a1152", "#9c2168", "#eb6a4e", "#f6a24a"], 7, 3000);
     await save("nacre", { kind: "generator", shader: nacre }, [],
       ["#7aa2ff", "#8fd3ff", "#c084fc", "#67e8f9"], 13, 6000);
     await save("burst", { kind: "generator", shader: burst }, [],

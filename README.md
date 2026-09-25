@@ -96,17 +96,17 @@ The canvas tracks the container's size by itself and renders at the device pixel
     <td><img src=".github/assets/silk.jpg" alt="Silk" /><br /><b>Silk</b> <code>silk</code><br />Satin folds with a highlight running along the threads.</td>
   </tr>
   <tr>
-    <td><img src=".github/assets/wisp.jpg" alt="Wisp" /><br /><b>Wisp</b> <code>wisp</code><br />Molten threads on dark, with hot beads and sparks.</td>
     <td><img src=".github/assets/nacre.jpg" alt="Nacre" /><br /><b>Nacre</b> <code>nacre</code><br />Glassy liquid folds whose colour shifts on every slope.</td>
-    <td><img src=".github/assets/burst.jpg" alt="Burst" /><br /><b>Burst</b> <code>burst</code><br />Thin rays fanning out of a dark core.</td>
+    <td><img src=".github/assets/burst.jpg" alt="Burst" /><br /><b>Burst</b> <code>burst</code><br />Thin rays out of one point, straight or twisted into a pinwheel.</td>
     <td><img src=".github/assets/glint.jpg" alt="Glint" /><br /><b>Glint</b> <code>glint</code><br />A shoal of spinning shards streaming along a current.</td>
+    <td></td>
   </tr>
   <tr>
     <td colspan="4" align="center"><b>Your palette</b>: try every look with your own colours in the <a href="https://instantgradient.com/app">live editor</a>.</td>
   </tr>
 </table>
 
-Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`, `wisp`, `nacre`, `burst`, `glint`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`, `<Wisp>`, `<Nacre>`, `<Burst>`, `<Glint>`).
+Every shader is a named export (`flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`, `nacre`, `burst`, `glint`) with a matching React component (`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`, `<Nacre>`, `<Burst>`, `<Glint>`).
 
 ### Params
 
@@ -226,21 +226,6 @@ The default is the horizon composition (big disc, mostly below the frame). For a
 | `light` | 0 – 360 | 20 | Light direction relative to the folds. `0` and `180` rake across them, `90` and `270` flatten the relief |
 
 Silk's `grain` goes up to 0.5; at `sheen: 0` with heavy grain it is matte cloth.
-
-</details>
-
-<details>
-<summary><b>Wisp</b></summary>
-
-| Param | Range | Default | What it does |
-| --- | --- | --- | --- |
-| `scale` | 0.5 – 2.5 | 1.2 | How tightly the threads wander |
-| `width` | 0.3 – 2 | 1 | Thread thickness, core and glow together |
-| `stretch` | 0 – 1 | 0.6 | `0` pooled arcs, `1` long streaks along `angle` |
-| `angle` | 0 – 360 | 20 | Direction the threads run, in degrees |
-| `warp` | 0 – 1 | 0.5 | `0` calm curves, `1` turbulent swirls |
-| `glow` | 0 – 1 | 0.6 | Coloured glow around each thread |
-| `sparks` | 0 – 1 | 0.4 | Hot beads along the threads |
 
 </details>
 
@@ -451,7 +436,7 @@ Like `mountGradient`, with a `source` (`{ kind: "generator", shader, params }` o
 
 ### React props
 
-`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`, `<Wisp>`, `<Nacre>`, `<Burst>`, `<Glint>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
+`<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>`, `<Whorl>`, `<Silk>`, `<Nacre>`, `<Burst>`, `<Glint>` take `colors`, `params`, `effects`, `speed`, `seed`, `loopSeconds`, `paused`, `className` and `style`. Changing `colors`, `params`, `effects`, `speed` or `paused` updates the live canvas; only a new `seed` remounts it. `<ShaderStack>` takes a `source` instead of being tied to one shader, which is how you put effects over an image.
 
 To pick the shader dynamically, use the generic component:
 

@@ -43,7 +43,6 @@ One component per shader, each a thin wrapper over the same props:
 | `<Dune>` | Overlapping crests, crisp on top and airbrushed below. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
 | `<Whorl>` | A spiral of curved blades, positionable with `x` / `y`. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
 | `<Silk>` | Satin folds with a highlight along the threads. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
-| `<Wisp>` | Molten threads on dark, swelling and thinning, with hot beads. | `scale`, `width`, `stretch`, `angle`, `warp`, `glow`, `sparks`, `grain` |
 | `<Nacre>` | Glassy liquid folds whose colour shifts on every slope. | `scale`, `flow`, `crease`, `depth`, `iridescence`, `light`, `grain` |
 | `<Burst>` | Thin rays out of one point, tunnel or star, straight or twisted. | `rays`, `sharp`, `glow`, `twist`, `x`, `y`, `grain` |
 | `<Glint>` | A shoal of spinning shards streaming along a current. | `size`, `density`, `bend`, `angle`, `speed`, `grain` |
@@ -63,7 +62,7 @@ import { Bloom } from "@instantshader/react";
 See the [`instantshader` README](https://www.npmjs.com/package/instantshader)
 for what each param does and for the shader defs themselves (re-exported from
 here as `flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`,
-`wisp`, `nacre`, `burst` and `glint`).
+`nacre`, `burst` and `glint`).
 
 ## Effects
 
