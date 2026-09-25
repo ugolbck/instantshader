@@ -606,7 +606,6 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
 
     active.forEach((state, i) => {
       const last = i === active.length - 1;
-      const outIndex: 0 | 1 = input === frameTargets[0] ? 1 : 0;
       const overGenerator = input === null && source.kind === "generator";
       syncTextures(state);
 
@@ -614,8 +613,16 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
         const grid = layerGrid(state);
         const [cellIn, cellOut] = cellTargetPair(grid);
 
+        // Cells come straight from the source even when the picture is also
+        // rendered, so they stay the same at every output size.
         if (input === null) renderSourceToCells(grid, cellIn);
         else downsampleToCells(input, grid, cellIn);
+        if (state.def.grid.picture && input === null) {
+          input = frameTarget(0);
+          renderSourceToFrame(input);
+        }
+        const picture = state.def.grid.picture ? input : null;
+        const outIndex: 0 | 1 = input === frameTargets[0] ? 1 : 0;
 
         const cellProgram = state.cell!;
         bindOutput(cellOut);
@@ -632,6 +639,10 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
         applyEffectUniforms(drawProgram, state, grid, overGenerator);
         bindTexture(2, cellOut.texture);
         gl.uniform1i(drawProgram.loc("u_cells"), 2);
+        if (picture) {
+          bindTexture(1, picture.texture);
+          gl.uniform1i(drawProgram.loc("u_picture"), 1);
+        }
         draw();
         input = out;
       } else {

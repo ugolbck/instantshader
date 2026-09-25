@@ -118,11 +118,12 @@ describe.skipIf(!ENABLED)("visual sheets", () => {
     const gen: Source = { kind: "generator", shader: bloom };
     const media: Source = { kind: "media", media: photo };
     const h = (params: Record<string, string | number | boolean>): EffectLayer[] => [{ effect: halftone, params }];
-    await sheet("halftone-bloom-duotone", gen, h({}));
-    await sheet("halftone-photo-source-hex", media, h({ grid: "hex", size: 20, colorMode: "source", paper: "#000000", invert: true, angle: 15 }));
-    await sheet("halftone-photo-line", media, h({ shape: "line", size: 14, angle: 30 }));
-    await sheet("halftone-bloom-palette-fine", gen, h({ size: 8, colorMode: "palette", paper: "#140f30", invert: true, radius: 1.2 }));
-    await sheet("halftone-photo-square-soft", media, h({ shape: "square", size: 24, angle: 0, softness: 0.4, colorMode: "source" }));
+    await sheet("halftone-photo-default", media, h({}));
+    await sheet("halftone-bloom-default", gen, h({}));
+    await sheet("halftone-photo-multiply-dot", media, h({ blend: "multiply", shape: "dot", size: 12 }));
+    await sheet("halftone-photo-overlay-palette", media, h({ blend: "overlay", colorMode: "palette", shape: "dot", radius: 1.1 }));
+    await sheet("halftone-photo-softlight-line", media, h({ blend: "softLight", shape: "line", size: 10, angle: 30, colorMode: "duotone", ink: "#ffffff" }));
+    await sheet("halftone-bloom-paper-classic", gen, h({ ground: "paper", blend: "normal", shape: "dot", size: 10, radius: 1.4, colorMode: "palette" }));
   }, 900_000);
 
   it("ascii", async () => {

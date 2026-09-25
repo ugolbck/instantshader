@@ -86,8 +86,16 @@ for (const def of effects) {
           const preview = renderFrame(c, 960, 540);
           const full = downscaleLinear(renderFrame(c, 3840, 2160), 4);
           const d = diffStats(preview, full);
-          expect(d.mean).toBeLessThanOrEqual(1.5);
-          expect(d.p99).toBeLessThanOrEqual(8);
+          // An effect that draws over the picture shows the source as it is at
+          // each size, grain included, and the source's own preview/export gap
+          // with it. Held to that gap plus the usual allowance.
+          let base = { mean: 0, p99: 0 };
+          if (def.grid?.picture) {
+            const bare = { source: make(), effects: [], timeMs: 2500 };
+            base = diffStats(renderFrame(bare, 960, 540), downscaleLinear(renderFrame(bare, 3840, 2160), 4));
+          }
+          expect(d.mean).toBeLessThanOrEqual(1.5 + base.mean);
+          expect(d.p99).toBeLessThanOrEqual(8 + base.p99);
         });
 
         // ---- time ----------------------------------------------------------

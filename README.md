@@ -285,7 +285,7 @@ An effect redraws a picture. The picture can be one of the shaders above or an i
   <tr>
     <td width="25%"><img src=".github/assets/pixelate.jpg" alt="Pixelate" /><br /><b>Pixelate</b> <code>pixelate</code><br />Flat cells, with optional posterize and grid lines.</td>
     <td width="25%"><img src=".github/assets/dither.jpg" alt="Dither" /><br /><b>Dither</b> <code>dither</code><br />Bayer or blue-noise patterns, two to eight levels.</td>
-    <td width="25%"><img src=".github/assets/halftone.jpg" alt="Halftone" /><br /><b>Halftone</b> <code>halftone</code><br />Dots, lines or squares on a square or hex screen.</td>
+    <td width="25%"><img src=".github/assets/halftone.jpg" alt="Halftone" /><br /><b>Halftone</b> <code>halftone</code><br />Dots, lines or diamonds blended over the picture, or on paper.</td>
     <td width="25%"><img src=".github/assets/ascii.jpg" alt="ASCII" /><br /><b>ASCII</b> <code>ascii</code><br />Characters picked by brightness, six sets.</td>
   </tr>
 </table>
@@ -361,15 +361,20 @@ Floyd-Steinberg and the other error-diffusion dithers are not included. They are
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
+| `ground` | `image`, `paper` | `image` | What the shapes are drawn on: the picture below, which shows between them, or a flat sheet of `paper` (classic print) |
+| `blend` | `normal`, `multiply`, `screen`, `overlay`, `softLight` | `screen` | How each shape combines with what is under it (CSS / W3C blend modes) |
+| `opacity` | 0 – 1 | 1 | Strength of the shapes over the ground |
 | `grid` | `square`, `hex` | `square` | Screen layout |
-| `shape` | `dot`, `line`, `square` | `dot` | What each cell draws |
-| `size` | 6 – 160 | 10 | Screen pitch |
+| `shape` | `dot`, `line`, `square` | `square` | What each cell draws. `square` at 45° is a diamond |
+| `size` | 6 – 160 | 20 | Screen pitch |
 | `angle` | 0 – 180 | 45 | Screen angle, in degrees |
-| `radius` | 0.2 – 1.5 | 1.4 | Shape size. Below about 1.2 the screen reads washed out; above 1, shapes merge in dark areas |
+| `radius` | 0.2 – 1.5 | 0.75 | Shape size. Above 1, neighbouring shapes merge where they are largest |
 | `softness` | 0 – 1 | 0.1 | Blurs shape edges |
 | `contrast` | 0 – 2 | 1.15 | Tone contrast before sizing the shapes |
 | `pulse` | 0 – 1 | 0 | Shapes swell and shrink in a wave across the frame |
-| `colorMode`, `ink`, `paper`, `invert` | | `palette` | See above. `paper` fills the gaps in every mode |
+| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above. `paper` shows only on a paper ground |
+
+Shapes grow where their blend has the most effect: screened shapes can only lighten, so they grow in the bright areas; with any other blend they grow in the dark areas, as in print. `invert` flips it. For the old look, shapes on a sheet, use `{ ground: "paper", blend: "normal" }`.
 
 </details>
 

@@ -26,7 +26,7 @@ describe.skipIf(!ENABLED)("readme assets", () => {
       [{ effect: dither, params: { pattern: "blueNoise", size: 3, colorMode: "palette", levels: 4 } }],
       ["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"], 3, 3000);
     await save("halftone", { kind: "generator", shader: halo },
-      [{ effect: halftone, params: { size: 16, angle: 30, ink: "#f4f1ea", paper: "#0b0b12", invert: true } }],
+      [{ effect: halftone, params: {} }],
       ["#081A3D", "#123A73", "#1E63AC", "#4C9EDB", "#AEDAF7"], 5, 2000);
     await save("ascii", { kind: "generator", shader: dune },
       [{ effect: ascii, params: { size: 30, colorMode: "source", paper: "#050505" } }],

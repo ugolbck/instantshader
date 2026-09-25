@@ -225,6 +225,14 @@ export type EffectDef = {
      * lattice; such an effect must supply its own draw `fragment`.
      */
     lattice?: (params: Record<string, ParamValue>) => { angle: number };
+    /**
+     * The draw stage also reads the layer below at frame size, as
+     * `uniform sampler2D u_picture`, for effects that draw over the picture
+     * rather than replacing it (halftone's image ground). Shape sizes and
+     * colours still come from the cell buffer; only the backdrop is per
+     * pixel.
+     */
+    picture?: boolean;
     fragment: string;
   };
   textures?: EffectTexture[];
