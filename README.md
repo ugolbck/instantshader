@@ -236,8 +236,11 @@ Silk's `grain` goes up to 0.5; at `sheen: 0` with heavy grain it is matte cloth.
 | --- | --- | --- | --- |
 | `scale` | 0.5 – 2.5 | 1.2 | How tightly the threads wander |
 | `width` | 0.3 – 2 | 1 | Thread thickness, core and glow together |
+| `stretch` | 0 – 1 | 0.6 | `0` pooled arcs, `1` long streaks along `angle` |
+| `angle` | 0 – 360 | 20 | Direction the threads run, in degrees |
+| `warp` | 0 – 1 | 0.5 | `0` calm curves, `1` turbulent swirls |
 | `glow` | 0 – 1 | 0.6 | Coloured glow around each thread |
-| `sparks` | 0 – 1 | 0.6 | Hot beads along the threads and at crossings |
+| `sparks` | 0 – 1 | 0.4 | Hot beads along the threads |
 
 </details>
 
@@ -248,7 +251,7 @@ Silk's `grain` goes up to 0.5; at `sheen: 0` with heavy grain it is matte cloth.
 | --- | --- | --- | --- |
 | `scale` | 0.4 – 2 | 0.9 | Lobe size |
 | `flow` | 0 – 1 | 0.5 | Domain warp: `0` round pools, `1` pulled liquid |
-| `crease` | 0 – 1 | 0.6 | Thin sharp fold lines between the lobes |
+| `crease` | 0 – 1 | 0.6 | Thin fold lines hugging the lobes' edges |
 | `depth` | 0.2 – 2 | 1 | Relief height, and so how far the colour shifts on slopes |
 | `iridescence` | 0 – 1 | 0.6 | How far along the ramp a slope walks. `0` is a plain lit gradient |
 | `light` | 0 – 360 | 40 | Light direction, in degrees |
@@ -260,10 +263,11 @@ Silk's `grain` goes up to 0.5; at `sheen: 0` with heavy grain it is matte cloth.
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
-| `rays` | 0 – 1 | 0.6 | Ray contrast: `0` soft sectors, `1` hard thin rays |
-| `core` | 0.2 – 2 | 1 | Radius of the dark core |
+| `rays` | 0 – 1 | 0.45 | Ray count: 8 broad rays at `0`, 80 needles at `1` |
+| `sharp` | 0 – 1 | 0.6 | Ray contrast: `0` soft sectors, `1` hard-edged rays |
+| `glow` | 0 – 1 | 0.7 | The centre: `0` a dark tunnel, `1` a white-hot source |
+| `twist` | 0 – 1 | 0.2 | Rays curve into a pinwheel |
 | `x`, `y` | -1 – 1 | 0.1, 0.05 | Centre position; `0` is the middle, `±1` the frame edge |
-| `spin` | 0 – 1 | 0.5 | Rotation rate. The ray field holds still on loops under 12 s and only streams outward |
 
 </details>
 

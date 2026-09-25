@@ -1,55 +1,61 @@
-// "Burst" look: prismatic rays. A dark core somewhere in the frame and
-// hundreds of thin rays radiating from it, each its own colour, grainy,
-// brightening outward and slowly turning.
+// "Burst" look: prismatic rays. A point somewhere in the frame and thin
+// rays radiating from it, each its own colour, grainy, streaming outward
+// in packets, optionally twisted into a pinwheel.
 //
 // SPEC
 //
 // 1. RAYS ARE ANISOTROPIC NOISE IN LOG-POLAR SPACE. About the centre,
-//    (theta, rho = log r). Periodic Perlin noise sampled at A = 40 angular
-//    periods and 0.6 per unit of rho has features ~60x longer radially than
-//    they are wide: rays. The integral period makes the field continuous
-//    across atan's branch cut (halo's trick). Two octaves; the ray mask is
-//    the field pushed through a smoothstep whose width is u_rays.
+//    (theta, rho = log r). Periodic Perlin noise sampled at A angular
+//    periods (u_rays: 8 to 80) and 0.6 per unit of rho has features far
+//    longer radially than they are wide: rays. The integral period makes
+//    the field continuous across atan's branch cut (halo's trick). Two
+//    octaves; the ray mask is the field pushed through a smoothstep whose
+//    width is u_sharp. A third, shorter field streams outward faster: the
+//    bright packets that travel along the rays.
 //
-// 2. A DARK CORE, LIT TO THE CORNERS. env = (1 - exp(-(r/core)^2)) * exp(-0.3 r):
-//    black at the centre, full a core-radius out, and only gently dimmer at
-//    the frame edge, so the composition is a hole in a field of light
-//    rather than a glow on black.
+// 2. TWIST. theta is offset by u_twist * rho, so every ray curves the same
+//    way: a pinwheel at full twist, straight rays at none. A function of
+//    rho only, so the angular period is intact.
 //
-// 3. PALETTE BY AZIMUTH, PER RAY. t = 0.5 + 0.5 cos(theta - theta0 + 2 rays):
+// 3. CENTRE, FROM TUNNEL TO STAR. env = exp(-0.3 r) times a hole,
+//    1 - exp(-(r/0.25)^2), faded out by u_glow; at full glow a white-hot
+//    spot sits on the point the rays converge to. Rays soften toward the
+//    centre either way.
+//
+// 4. PALETTE BY AZIMUTH, PER RAY. t = 0.5 + 0.5 cos(theta - theta0 + 2 rays):
 //    the ramp wraps around the burst without a seam, and the ray field
 //    inside the cosine scatters neighbouring rays to neighbouring stops.
 //
-// 4. NOT EMISSIVE. color = palette(t) * (0.15 + 0.85 * mask * env): a ray
-//    at full mask and envelope IS its stop at full saturation, and the
-//    core is the stop crushed to 15%. Grain is part of the look and
-//    defaults high.
+// 5. NOT EMISSIVE. color = palette(t) * (0.15 + 0.85 * mask * env): a ray
+//    at full mask and envelope IS its stop at full saturation. Grain is
+//    part of the look and defaults high.
 //
-// 5. MOTION. theta0 turns by loopAngle; the ray field streams outward by
-//    loopTravel along rho on a tiling axis; the core radius breathes on
-//    loopFreq.
+// 6. MOTION, WITHOUT ROTATION. The ray field and the packets stream
+//    outward by loopTravel on tiling axes (exact for any loop length); the
+//    colour wheel sways a few degrees on loopFreq. Nothing turns by whole
+//    turns: a full turn of a 40-ray field per loop is a strobe, and a
+//    loop-dependent turn makes the preview a different picture at every
+//    loop length.
 //
-// Against its siblings: bloom is a fan of fat soft lobes lit at the
-// centre; burst is thin rays lit at the rim; whorl spirals, burst does not.
+// Against its siblings: bloom is a fan of fat soft lobes; burst is thin
+// rays; whorl is one thick spiral band, burst's twist is many thin ones.
 
 import type { ShaderDef } from "../types";
-import { PERIODIC_2D, GRAIN, ISO, LOOP_ANGLE, SEED } from "./noise";
+import { PERIODIC_2D, GRAIN, ISO, SEED } from "./noise";
 
 const FRAGMENT = `
 uniform float u_rays;
-uniform float u_core;
+uniform float u_sharp;
+uniform float u_glow;
+uniform float u_twist;
 uniform float u_x;
 uniform float u_y;
-uniform float u_spin;
 uniform float u_grain;
 
 ${PERIODIC_2D}
 ${GRAIN}
 ${ISO}
-${LOOP_ANGLE}
 ${SEED}
-
-const float A = 40.0;
 
 void main() {
   vec2 uv = worldUv();
@@ -60,38 +66,37 @@ void main() {
   vec2 rel = p - c;
   float r = max(length(rel), 0.0005);
   float theta = atan(rel.y, rel.x);
-
-  // Two rotations: the colour wheel (theta0) and, slower, the ray field
-  // (theta1). Both are whole turns per loop; the ray field must turn by a
-  // whole number of turns, not a whole number of noise periods, or the
-  // loop closes on a shifted copy of the rays. The static u_spin term gives
-  // the knob a visible effect at t = 0.
-  float theta0 = loopAngle(0.06 * u_spin + 0.001) + seedHash(2.0) * TAU + 0.7 * u_spin;
-  // loopAngle floors at one turn per loop, and one turn of a 40-ray field
-  // in under 12 s is a strobe; below that the ray field holds still and
-  // only streams outward (loopFreq's freeze, by hand).
-  float rayTurn = (u_loop > 0.0 && u_loop < 12.0) ? 0.0 : loopAngle(0.02 * u_spin + 0.001);
-  float theta1 = rayTurn + seedHash(3.0) * TAU;
-  // Radial travel on a tiling axis: rho scaled so the tile is integral.
   float rho = log(r / 0.1) * 0.6;
-  float flowOut = loopTravel(0.05, vec2(0.0, 1.0), 4.0).y;
-  vec2 so = seedOffset();
+  float th = theta + u_twist * 1.2 * rho;
 
-  vec2 sp = vec2((theta - theta1) / TAU * A, rho - flowOut + so.x);
+  // Ray count: the angular period of the noise, integral so the field
+  // closes on itself around the centre.
+  float A = floor(8.0 + 72.0 * u_rays);
+  vec2 so = seedOffset();
+  float flowOut = loopTravel(0.05, vec2(0.0, 1.0), 4.0).y;
+  float flowPk = loopTravel(0.2, vec2(0.0, 1.0), 12.0).y;
+
+  vec2 sp = vec2(th / TAU * A, rho - flowOut + so.x);
   float rays = pnoise(sp, vec2(A, 4.0)) + 0.5 * pnoise(sp * 2.0 + vec2(0.0, so.y), vec2(2.0 * A, 8.0));
+  // Packets: shorter along the ray and streaming out four times faster.
+  float pk = pnoise(vec2(sp.x, rho * 3.0 - flowPk + so.y), vec2(A, 12.0));
   // Sector field: a few broad angular sectors that keep neighbouring rays
   // in one family, and the mask's contrast.
-  float sector = pnoise(vec2((theta - theta1) / TAU * 6.0, so.y * 0.1), vec2(6.0, 1024.0));
-  // Softer toward the centre, where the rays converge: the reference's
-  // rays blur into the core rather than sharpening to a point.
-  float edge = mix(0.7, 0.25, u_rays) + 0.5 * exp(-r / 0.3);
-  float mask = smoothstep(-edge, edge, rays + 0.3 * sector);
+  float sector = pnoise(vec2(th / TAU * 6.0 + seedHash(3.0) * 6.0, 0.5), vec2(6.0, 1024.0));
+  // Softer toward the centre, where the rays converge.
+  float edge = mix(0.8, 0.2, u_sharp) + 0.4 * exp(-r / 0.3);
+  float mask = smoothstep(-edge, edge, rays + 0.4 * pk + 0.3 * sector);
 
-  float core = 0.25 * u_core * (1.0 + 0.12 * sin(loopFreq(0.1) * u_time + u_seed));
-  float env = (1.0 - exp(-(r * r) / (core * core))) * exp(-0.3 * r);
+  float hole = 1.0 - exp(-(r * r) / (0.25 * 0.25));
+  float env = mix(hole, 1.0 + 0.6 * exp(-r / 0.35), u_glow) * exp(-0.3 * r);
+  float hot = u_glow * exp(-(r * r) / (0.16 * 0.16));
 
-  float t = 0.5 + 0.5 * cos(theta - theta0 + 2.0 * rays + 1.5 * sector);
-  vec3 color = palette(t) * (0.15 + 0.85 * mask * env);
+  float sway = 0.35 * sin(loopFreq(0.08) * u_time + u_seed);
+  float theta0 = seedHash(2.0) * TAU + sway;
+  float t = 0.5 + 0.5 * cos(th - theta0 + 2.0 * rays + 1.5 * sector);
+  vec3 tint = palette(t);
+  vec3 color = tint * (0.15 + 0.85 * mask * env);
+  color = mix(color, vec3(1.0), hot * 0.85);
 
   float g = grain(uv, u_time) - 0.5;
   color += g * u_grain;
@@ -105,23 +110,26 @@ export const burst: ShaderDef = {
   label: "Burst",
   fragment: FRAGMENT,
   params: [
-    // Ray contrast: 0 is soft sectors, 1 is hard thin rays.
-    { key: "rays", label: "Rays", min: 0, max: 1, step: 0.01, default: 0.6 },
-    // Radius of the dark core.
-    { key: "core", label: "Core", min: 0.2, max: 2, step: 0.01, default: 1 },
+    // Ray count: 8 broad rays at 0, 80 needles at 1.
+    { key: "rays", label: "Rays", min: 0, max: 1, step: 0.01, default: 0.45 },
+    // Ray contrast: 0 is soft sectors, 1 is hard-edged rays.
+    { key: "sharp", label: "Sharp", min: 0, max: 1, step: 0.01, default: 0.6 },
+    // The centre: a dark tunnel at 0, a white-hot source at 1.
+    { key: "glow", label: "Glow", min: 0, max: 1, step: 0.01, default: 0.7 },
+    // Rays curve into a pinwheel.
+    { key: "twist", label: "Twist", min: 0, max: 1, step: 0.01, default: 0.2 },
     { key: "x", label: "X", min: -1, max: 1, step: 0.01, default: 0.1 },
     { key: "y", label: "Y", min: -1, max: 1, step: 0.01, default: 0.05 },
-    // Rotation rate of the whole burst.
-    { key: "spin", label: "Spin", min: 0, max: 1, step: 0.01, default: 0.5 },
     { key: "grain", label: "Grain", min: 0, max: 0.3, step: 0.01, default: 0.14 },
   ],
   randomParams(rand) {
     return {
-      rays: 0.3 + rand() * (1 - 0.3),
-      core: 0.5 + rand() * (1.6 - 0.5),
+      rays: 0.2 + rand() * 0.7,
+      sharp: 0.3 + rand() * 0.7,
+      glow: 0.3 + rand() * 0.7,
+      twist: rand() * 0.7,
       x: -0.7 + rand() * 1.4,
       y: -0.7 + rand() * 1.4,
-      spin: 0.2 + rand() * 0.8,
       grain: 0.14,
     };
   },

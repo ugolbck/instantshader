@@ -8,9 +8,10 @@
 //
 // 1. A LIQUID HEIGHT FIELD. One smooth simplex octave (plus a faint
 //    second) over a domain warped once, isotropic and large, so the surface
-//    is a few pooled lobes; a sharpened ridge of a second field adds thin
-//    fold lines between them (u_crease). Normal by central differences with
-//    a fixed frame-unit step (see silk).
+//    is a few pooled lobes; narrow ridges along two contours of that same
+//    field add thin fold lines that hug the lobes (u_crease). Contours of
+//    one field never cross, so no fold line cuts through another. Normal by
+//    central differences with a fixed frame-unit step (see silk).
 //
 // 2. IRIDESCENCE IS A RAMP SHIFT BY TILT. Thin-film colour is a function of
 //    the angle light travels through the film; the stand-in here is the
@@ -57,16 +58,16 @@ float tri(float x) {
 }
 
 // One smooth octave with a faint second: pooled lobes, not texture. The
-// crease term is a ridge (1 - |n|) of a second field, sharpened, so the
-// surface has thin sharp fold lines between soft lobes, the way a liquid
-// sheet folds over itself.
+// creases are narrow ridges where the base field crosses a level, so they
+// are contours of the lobes themselves: they hug each lobe's edge and, as
+// level sets of one field, never cross each other or cut through a lobe.
 float height(vec2 p, float f, vec2 so, vec2 drift, vec2 warp) {
   vec2 q = (p + warp) * f + so + drift;
-  float base = snoise(q) + 0.3 * snoise(q * 2.1 + 5.0);
-  float c1 = 1.0 - abs(snoise(q * 0.8 + vec2(31.0, 17.0)));
-  float c2 = 1.0 - abs(snoise(q * 1.7 + vec2(-12.0, 44.0)));
-  float crease = pow(c1, 6.0) + 0.5 * pow(c2, 8.0);
-  return base * 0.7 + crease * u_crease * 0.9;
+  float base = snoise(q) + 0.18 * snoise(q * 2.1 + 5.0);
+  float d0 = base;
+  float d1 = abs(base) - 0.6;
+  float crease = exp(-(d0 * d0) / 0.012) + 0.6 * exp(-(d1 * d1) / 0.01);
+  return base * 0.7 + crease * u_crease * 0.3;
 }
 
 void main() {
