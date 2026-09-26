@@ -26,8 +26,8 @@
 //
 // GROUND AND BLEND come from the shared composite stage (chunks.ts, GROUND
 // and COMPOSITE): shapes over the picture by default, or on paper. Shape
-// size is the shared mark strength (RESPONSE), which is also where motion
-// lives. See SPEC-marks.md.
+// size is the shared mark strength (RESPONSE). Halftone's shapes are
+// static; shared motion is not exposed yet. See SPEC-marks.md.
 
 import type { EffectDef, ParamValue } from "../types";
 import {
@@ -39,7 +39,6 @@ import {
   colorModeParams,
   groundParams,
   groundPicture,
-  motionParams,
   responseParams,
 } from "./chunks";
 
@@ -195,7 +194,6 @@ export const halftone: EffectDef = {
     { key: "softness", label: "Softness", min: 0, max: 1, step: 0.01, default: 0.1 },
     ...responseParams({ contrast: 1.15 }),
     ...colorModeParams({ mode: "source", paperWhen: { key: "ground", in: ["paper"] } }),
-    ...motionParams(),
   ],
   randomParams(rand) {
     const shapes = ["dot", "dot", "line", "square"];
@@ -224,9 +222,6 @@ export const halftone: EffectDef = {
       ink: blend === "screen" || blend === "colorDodge" ? "#ffffff" : "#111111",
       paper: "#f4f1ea",
       invert: false,
-      motion: "none",
-      motionSpeed: 0.5,
-      motionAmount: 0.5,
     };
   },
 };

@@ -344,6 +344,12 @@ vec3 overPicture(vec3 s) {
  * Motion multiplies the strength, so blank cells stay blank. Its angular
  * speed is snapped to whole cycles per loop and floored at one: it is the
  * effect's own motion, and freezing it on a short loop would read as broken.
+ *
+ * No shipped effect declares motion, motionSpeed or motionAmount yet (see
+ * motionParams() below), so these uniforms are unset and read as 0: motion
+ * is "none" and the strength above is unmodulated. The GLSL stays wired up
+ * because motion ships later, once effects get a clock independent of the
+ * source's own speed and pause; see SPEC-marks.md.
  */
 export const RESPONSE: string = `
 uniform float u_style;

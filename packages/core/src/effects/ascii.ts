@@ -10,8 +10,9 @@
 //
 // GROUND AND BLEND come from the shared composite stage (chunks.ts, GROUND
 // and COMPOSITE): the glyphs are drawn over the picture by default, blended
-// into it, or on paper. Glyph weight is the shared mark strength (RESPONSE),
-// which is also where motion lives. See SPEC-marks.md.
+// into it, or on paper. Glyph weight is the shared mark strength (RESPONSE).
+// ASCII's only motion is Cycle; shared motion is not exposed yet. See
+// SPEC-marks.md.
 //
 // Glyphs are chosen by brightness. The sharper alternative is shape matching
 // (Alex Harri's 6-sample shape vectors): it improves edges in photos, but on
@@ -28,7 +29,6 @@ import {
   colorModeParams,
   groundParams,
   groundPicture,
-  motionParams,
   responseParams,
 } from "./chunks";
 import { CELL_ASPECT, atlasGlyphHeight, buildAtlas, charsetInfo, toneLookup } from "./asciiAtlas";
@@ -191,7 +191,6 @@ export const ascii: EffectDef = {
     // lights, which is what keeps the picture readable under them.
     ...responseParams({ contrast: 1.2 }),
     ...colorModeParams({ mode: "source", ink: "#e8ffe8", paper: "#000000", paperWhen: { key: "ground", in: ["paper"] } }),
-    ...motionParams(),
   ],
   randomParams(rand) {
     const sets = ["standard", "dense", "blocks", "minimal", "binary"];
@@ -219,9 +218,6 @@ export const ascii: EffectDef = {
       ink: "#e8ffe8",
       paper: "#000000",
       invert: false,
-      motion: "none",
-      motionSpeed: 0.5,
-      motionAmount: 0.5,
     };
   },
 };

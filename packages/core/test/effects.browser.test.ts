@@ -18,13 +18,10 @@ import {
 // no motion of its own.
 const MOTION: Record<string, Record<string, ParamValue>> = {
   dither: { shimmer: 8 },
-  // motionSpeed 0.5 (the default) times an 8s loop snaps to exactly 4 whole
-  // cycles, so the "moves on its own" check (0s vs half of an 8s loop) lands
-  // on an even number of cycles and sees no movement by construction. 0.6
-  // snaps to 5 (odd), so half the loop is an odd number of half-cycles and
-  // the frame actually differs.
-  halftone: { motion: "wave", motionAmount: 1, motionSpeed: 0.6 },
-  ascii: { cycle: 8, motion: "twinkle", motionAmount: 1, motionSpeed: 0.6 },
+  // cycleAmount needs to clear glyphCount * 0.25's reroll window before a
+  // hash can ever push a glyph to a neighbour; the default 0.2 sits under
+  // that for the 10-glyph standard set, so it would never reroll here.
+  ascii: { cycle: 8, cycleAmount: 1 },
 };
 
 // The classic full-frame output, for the cell-exactness test: the filters'
@@ -420,4 +417,12 @@ describe("filters over the picture", () => {
       expect(diffStats(plain, fx).max).toBeLessThanOrEqual(1);
     });
   }
+});
+
+describe("effect motion", () => {
+  it("no shipped effect exposes shared motion yet", () => {
+    for (const def of effects) {
+      expect(def.params.some((p) => p.key === "motion" || p.key === "motionSpeed" || p.key === "motionAmount")).toBe(false);
+    }
+  });
 });
