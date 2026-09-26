@@ -230,9 +230,10 @@ export type EffectDef = {
      * `uniform sampler2D u_picture`, for effects that draw over the picture
      * rather than replacing it (halftone's image ground). Shape sizes and
      * colours still come from the cell buffer; only the backdrop is per
-     * pixel.
+     * pixel. A function returns a blur in reference px applied to that
+     * picture (0 = none).
      */
-    picture?: boolean;
+    picture?: true | ((params: Record<string, ParamValue>) => { blur: number });
     fragment: string;
   };
   textures?: EffectTexture[];

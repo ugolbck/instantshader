@@ -30,6 +30,42 @@ import {
   SOFT_PREAMBLE,
 } from "./effects/chunks";
 
+/** Backdrop blur, pass 1: box-average the frame down by k (4x4 LINEAR taps
+ * spread over one small texel). */
+const BLUR_DOWN_FRAGMENT = `
+uniform sampler2D u_source;
+uniform vec2 u_span;
+void main() {
+  vec3 acc = vec3(0.0);
+  for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < 4; i++) {
+      vec2 o = ((vec2(float(i), float(j)) + 0.5) / 4.0 - 0.5) * u_span;
+      acc += toLinear(texture2D(u_source, v_uv + o).rgb);
+    }
+  }
+  gl_FragColor = vec4(toSrgb(acc / 16.0), 1.0);
+}
+`;
+
+/** Backdrop blur, passes 2 and 3: one axis of a 25-tap Gaussian, in linear
+ * light. Sigma is 2..4 small texels, so +-12 taps reach 3 sigma. */
+const BLUR_PASS_FRAGMENT = `
+uniform sampler2D u_source;
+uniform vec2 u_step;
+uniform float u_sigma;
+void main() {
+  vec3 acc = vec3(0.0);
+  float wsum = 0.0;
+  for (int i = -12; i <= 12; i++) {
+    float x = float(i);
+    float w = exp(-0.5 * x * x / (u_sigma * u_sigma));
+    acc += w * toLinear(texture2D(u_source, v_uv + x * u_step).rgb);
+    wsum += w;
+  }
+  gl_FragColor = vec4(toSrgb(acc / wsum), 1.0);
+}
+`;
+
 export type StackRenderer = {
   renderAt(timeMs: number): void;
   setColors(colors: string[]): void;
@@ -369,6 +405,63 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
     cellTargetsUsed.clear();
   }
 
+  const blurTargets = new Map<string, [Target, Target]>();
+  const blurTargetsUsed = new Set<string>();
+  let blurDownProgram: Program | null = null;
+  let blurPassProgram: Program | null = null;
+
+  /**
+   * `input` blurred by `blurRef` reference px. Done at 1/k resolution with
+   * k chosen so sigma is 2..4 small texels: the cost is the same at every
+   * output size, and the small target is ~2 * ref / blur texels whatever
+   * the output scale, so preview and export blur alike.
+   */
+  function blurred(input: Target, blurRef: number): Target {
+    const blurPx = blurRef * outputScale(canvas.width, canvas.height);
+    const k = Math.max(1, Math.floor(blurPx / 2));
+    const w = Math.max(1, Math.round(canvas.width / k));
+    const h = Math.max(1, Math.round(canvas.height / k));
+    const key = `${w}x${h}`;
+    blurTargetsUsed.add(key);
+    let pair = blurTargets.get(key);
+    if (!pair) {
+      pair = [createTarget(gl, w, h, "linear"), createTarget(gl, w, h, "linear")];
+      blurTargets.set(key, pair);
+    }
+    const [a, b] = pair;
+    blurDownProgram ??= createProgram(gl, VERTEX_SHADER, BASE_UNIFORMS + COLOR_MATH + BLUR_DOWN_FRAGMENT);
+    blurPassProgram ??= createProgram(gl, VERTEX_SHADER, BASE_UNIFORMS + COLOR_MATH + BLUR_PASS_FRAGMENT);
+
+    bindOutput(a);
+    useProgram(blurDownProgram, [w, h]);
+    bindTexture(1, input.texture);
+    gl.uniform1i(blurDownProgram.loc("u_source"), 1);
+    gl.uniform2f(blurDownProgram.loc("u_span"), k / canvas.width, k / canvas.height);
+    draw();
+
+    const passes: [Target, Target, number, number][] = [[a, b, 1 / w, 0], [b, a, 0, 1 / h]];
+    for (const [src, dst, dx, dy] of passes) {
+      bindOutput(dst);
+      useProgram(blurPassProgram, [w, h]);
+      bindTexture(1, src.texture);
+      gl.uniform1i(blurPassProgram.loc("u_source"), 1);
+      gl.uniform2f(blurPassProgram.loc("u_step"), dx, dy);
+      gl.uniform1f(blurPassProgram.loc("u_sigma"), blurPx / k);
+      draw();
+    }
+    return a;
+  }
+
+  function pruneBlurTargets(): void {
+    for (const [key, pair] of blurTargets) {
+      if (blurTargetsUsed.has(key)) continue;
+      deleteTarget(gl, pair[0]);
+      deleteTarget(gl, pair[1]);
+      blurTargets.delete(key);
+    }
+    blurTargetsUsed.clear();
+  }
+
   // ---- per-frame state and pass helpers -------------------------------------
 
   let timeSec = 0;
@@ -621,7 +714,10 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
           input = frameTarget(0);
           renderSourceToFrame(input);
         }
-        const picture = state.def.grid.picture ? input : null;
+        const pic = state.def.grid.picture;
+        let picture: Target | null = pic ? input : null;
+        const blur = typeof pic === "function" ? pic(state.params).blur : 0;
+        if (picture && blur > 0) picture = blurred(picture, blur);
         const outIndex: 0 | 1 = input === frameTargets[0] ? 1 : 0;
 
         const cellProgram = state.cell!;
@@ -663,6 +759,7 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
     });
 
     pruneCellTargets();
+    pruneBlurTargets();
   }
 
   function dispose(): void {
@@ -672,6 +769,8 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
     mediaFrameProgram?.dispose();
     mediaCellProgram?.dispose();
     downsampleProgram?.dispose();
+    blurDownProgram?.dispose();
+    blurPassProgram?.dispose();
     deleteTarget(gl, frameTargets[0]);
     deleteTarget(gl, frameTargets[1]);
     frameTargets = [null, null];
@@ -680,6 +779,11 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
       deleteTarget(gl, pair[1]);
     }
     cellTargets.clear();
+    for (const pair of blurTargets.values()) {
+      deleteTarget(gl, pair[0]);
+      deleteTarget(gl, pair[1]);
+    }
+    blurTargets.clear();
     gl.deleteTexture(mediaTexture);
     gl.deleteTexture(paletteTexture);
     gl.deleteBuffer(quadBuffer);

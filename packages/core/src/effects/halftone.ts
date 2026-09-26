@@ -38,6 +38,7 @@ import {
   RESPONSE,
   colorModeParams,
   groundParams,
+  groundPicture,
   motionParams,
   responseParams,
 } from "./chunks";
@@ -169,7 +170,7 @@ export const halftone: EffectDef = {
   grid: {
     cell: cellOf,
     lattice: (p) => ({ angle: p.angle as number }),
-    picture: true,
+    picture: groundPicture,
     fragment: CELL_FRAGMENT,
   },
   params: [

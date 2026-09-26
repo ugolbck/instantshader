@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bloom, createStackRenderer, effects, gridFor, halo, renderGradientFrame } from "../src/index";
 import type { EffectDef, EffectLayer, ParamValue, Source } from "../src/index";
-import { dither } from "../src/index";
+import { dither, halftone } from "../src/index";
 import { resolveEffectParams } from "../src/effectParams";
 import { BLEND, blendParams } from "../src/effects/chunks";
 import {
@@ -315,6 +315,45 @@ describe("soft effects", () => {
       renderFrame({ source: generator, effects: [{ effect: invert }, { effect: pixelate }, { effect: invert }] }, 160, 90),
     ).not.toThrow();
   });
+});
+
+describe("backdrop blur", () => {
+  // Opacity 0 leaves only the backdrop, which is what these measure.
+  const bare = (p: Record<string, ParamValue>) => layer(halftone, { opacity: 0, ...p });
+
+  // Halftone supersamples its backdrop (2x2 or 4x4 bilinear taps per pixel),
+  // so hard edges in the test picture soften by a fraction of a pixel even
+  // unblurred: compare means, not maxima.
+  it("an unblurred backdrop is the picture itself", () => {
+    const plain = renderFrame({ source: picture() }, 320, 180);
+    const fx = renderFrame({ source: picture(), effects: bare({ blur: 0 }) }, 320, 180);
+    expect(diffStats(plain, fx).mean).toBeLessThanOrEqual(1);
+  });
+
+  it("blurs the backdrop", () => {
+    // The test picture's disc, block and stripes have hard edges; a 40 ref
+    // px blur (about 7 px here) moves edge pixels by far more than 20.
+    const plain = renderFrame({ source: picture() }, 320, 180);
+    const fx = renderFrame({ source: picture(), effects: bare({ blur: 40 }) }, 320, 180);
+    expect(diffStats(plain, fx).p99).toBeGreaterThan(20);
+  });
+
+  it("is ignored on a paper ground", () => {
+    const a = renderFrame({ source: picture(), effects: layer(halftone, { ground: "paper" }) }, 320, 180);
+    const b = renderFrame({ source: picture(), effects: layer(halftone, { ground: "paper", blur: 12 }) }, 320, 180);
+    expect(framesEqual(a, b)).toBe(true);
+  });
+
+  for (const blur of [3, 12, 40]) {
+    it(`blur ${blur}: previews what the 4K export looks like downscaled`, () => {
+      const c = { source: picture(), effects: bare({ blur }) };
+      const preview = renderFrame(c, 960, 540);
+      const full = downscaleLinear(renderFrame(c, 3840, 2160), 4);
+      const d = diffStats(preview, full);
+      expect(d.mean).toBeLessThanOrEqual(1.5);
+      expect(d.p99).toBeLessThanOrEqual(8);
+    });
+  }
 });
 
 describe("blend math", () => {
