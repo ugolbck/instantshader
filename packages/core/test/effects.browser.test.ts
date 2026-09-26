@@ -102,7 +102,7 @@ for (const def of effects) {
           // each size, grain included, and the source's own preview/export gap
           // with it. Held to that gap plus the usual allowance.
           let base = { mean: 0, p99: 0 };
-          if (def.grid?.picture) {
+          if (def.grid?.picture || !def.grid) {
             const bare = { source: make(), effects: [], timeMs: 2500 };
             base = diffStats(renderFrame(bare, 960, 540), downscaleLinear(renderFrame(bare, 3840, 2160), 4));
           }
@@ -306,6 +306,16 @@ describe("dither", () => {
     const seen = new Set<string>();
     for (let i = 0; i < f.data.length; i += 4) seen.add(`${f.data[i]},${f.data[i + 1]},${f.data[i + 2]}`);
     expect(seen.size).toBeLessThanOrEqual(3);
+  });
+});
+
+describe("tint", () => {
+  it("duotone maps black to dark and white to light", () => {
+    const tint = effects.find((e) => e.id === "tint")!;
+    for (const [hex, want] of [["#000000", [0x10, 0x20, 0x30]], ["#ffffff", [0xf0, 0xe0, 0xd0]]] as const) {
+      const f = renderFrame({ source: flat(hex), effects: layer(tint, { mode: "duotone", dark: "#102030", light: "#f0e0d0", amount: 1 }) }, 16, 16);
+      expect(Math.abs(f.data[0] - want[0]) + Math.abs(f.data[1] - want[1]) + Math.abs(f.data[2] - want[2])).toBeLessThanOrEqual(3);
+    }
   });
 });
 

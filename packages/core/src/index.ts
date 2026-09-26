@@ -21,6 +21,7 @@ export { pixelate } from "./effects/pixelate";
 export { dither } from "./effects/dither";
 export { halftone } from "./effects/halftone";
 export { ascii } from "./effects/ascii";
+export { tint } from "./effects/tint";
 
 // Registry conveniences — importing these pulls ALL shaders (documented as such).
 export { shaders, getShader } from "./registry";
