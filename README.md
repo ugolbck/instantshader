@@ -304,7 +304,7 @@ import { Bloom, dither } from "@instantshader/react";
 <Bloom
   colors={["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"]}
   loopSeconds={30}
-  effects={[{ effect: dither, params: { pattern: "blueNoise", size: 4, colorMode: "palette", levels: 4 } }]}
+  effects={[{ effect: dither, params: { pattern: "blueNoise", size: 4, colorMode: "palette", levels: 4, blend: "normal", opacity: 1 } }]}
   style={{ width: "100%", height: 480 }}
 />
 ```
@@ -346,7 +346,7 @@ Marks grow where they show. On an image ground, `multiply` grows them in the dar
 
 Dither and pixelate take `blend` and `opacity` only. `blend: "normal"` with `opacity: 1` replaces the picture.
 
-Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (the palette's colours). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout: dither outputs `levels` steps of the ramp (set `levels` to the number of colours to get exactly those), and halftone and ASCII colour each dot or glyph with the nearest palette stop, flat. On halftone and ASCII, `paper` only shows on a paper ground.
+Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (the palette's colours). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout: dither outputs `levels` steps of the ramp (set `levels` to the number of colours to get exactly those, at `blend: "normal"` and `opacity: 1`), and halftone and ASCII colour each dot or glyph with the nearest palette stop, flat. On halftone and ASCII, `paper` only shows on a paper ground.
 
 Tint recolours whatever is below it, so stack it after any effect, or use it alone.
 
@@ -420,7 +420,7 @@ For shapes on a sheet, as in print, use `{ ground: "paper", blend: "normal" }`.
 | `style`, `exposure`, `contrast`, `density` | | `filled`, 0, 1.2, 1 | See above |
 | `colorMode`, `ink`, `paper`, `invert` | | `source`, `#e8ffe8`, `#000000` | See above |
 
-For the classic terminal look, characters on black, use `{ ground: "paper", blend: "normal" }`.
+For the classic terminal look, characters on black, use `{ ground: "paper", blend: "normal", contrast: 1 }`.
 
 Characters come from the system monospace font unless you pass `fontFamily` to the mount. Load a custom font with `document.fonts.load` first.
 
@@ -440,7 +440,7 @@ Characters come from the system monospace font unless you pass `fontFamily` to t
 
 ### The export matches the preview
 
-Effects compute one value per cell into a small buffer whose size depends only on the params and the aspect ratio, and every output size paints that same buffer. A 900px preview and a 3840x2160 export contain the same cells with the same values. 1080p and 4K exports (and their square and portrait equivalents) are pixel-exact. Other sizes, the preview included, are the export downscaled in linear light, so a dither too fine for a small preview to resolve still shows the right brightness. `getGridInfo()` on the handle reports output pixels per cell if you want to warn users about that case.
+Effects compute one value per cell into a small buffer whose size depends only on the params and the aspect ratio, and every output size paints that same buffer. A 900px preview and a 3840x2160 export contain the same cells with the same values. At 1080p and 4K (and their square and portrait equivalents) the cells and marks are pixel-exact; an image-ground backdrop and its blur are sampled per output pixel. Other sizes, the preview included, are the export downscaled in linear light, so a dither too fine for a small preview to resolve still shows the right brightness. `getGridInfo()` on the handle reports output pixels per cell if you want to warn users about that case.
 
 Video export works as before, with `createStackRenderer` in place of `createRenderer`:
 

@@ -74,7 +74,7 @@ import { Bloom, dither } from "@instantshader/react";
 
 <Bloom
   colors={["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"]}
-  effects={[{ effect: dither, params: { pattern: "blueNoise", colorMode: "palette", levels: 4 } }]}
+  effects={[{ effect: dither, params: { pattern: "blueNoise", colorMode: "palette", levels: 4, blend: "normal", opacity: 1 } }]}
   style={{ width: "100%", height: "100%" }}
 />;
 ```

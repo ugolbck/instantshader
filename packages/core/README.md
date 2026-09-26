@@ -71,10 +71,11 @@ the whole registry (importing either pulls every shader).
 
 An effect redraws a picture: a shader's output, or an image, canvas or video
 frame you supply. Five are included: `pixelate`, `dither`, `halftone`,
-`ascii` and `tint`. They draw over the picture rather than replacing it:
-`ground` picks the picture or a flat paper sheet under halftone and ASCII
-marks, and `blend` and `opacity` set how the effect mixes with what is below
-(tint uses `amount` instead).
+`ascii` and `tint`. Halftone and ASCII draw marks over the picture: `ground`
+picks the picture or a flat paper sheet under them. Pixelate and dither
+replace the picture at `blend: "normal"` and `opacity: 1` (pixelate's
+default) and mix with it otherwise. `blend` and `opacity` set how the effect
+mixes with what is below (tint uses `amount` instead).
 
 ```ts
 import { mountStack, bloom, dither } from "instantshader";
@@ -82,7 +83,7 @@ import { mountStack, bloom, dither } from "instantshader";
 mountStack(el, {
   source: { kind: "generator", shader: bloom },
   colors: ["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"],
-  effects: [{ effect: dither, params: { pattern: "blueNoise", colorMode: "palette", levels: 4 } }],
+  effects: [{ effect: dither, params: { pattern: "blueNoise", colorMode: "palette", levels: 4, blend: "normal", opacity: 1 } }],
   loopSeconds: 30,
 });
 ```
