@@ -319,17 +319,18 @@ describe("tint", () => {
   });
 });
 
-describe("soft effects", () => {
-  // Tint is the one shipped soft effect; the path is exercised with a
-  // minimal one whose output is exact: invert the layer below.
-  const invert: EffectDef = {
-    id: "test-invert",
-    label: "Invert",
-    fragment: "void main() { gl_FragColor = vec4(1.0 - source(v_uv).rgb, 1.0); }",
-    params: [],
-    randomParams: () => ({}),
-  };
+// Tint is the one shipped soft effect; the soft path is exercised with a
+// minimal one whose output is exact: invert the layer below. Two of them
+// cancel, and force the picture into a frame target first.
+const invert: EffectDef = {
+  id: "test-invert",
+  label: "Invert",
+  fragment: "void main() { gl_FragColor = vec4(1.0 - source(v_uv).rgb, 1.0); }",
+  params: [],
+  randomParams: () => ({}),
+};
 
+describe("soft effects", () => {
   it("reads the layer below at frame size", () => {
     const plain = renderFrame({ source: picture() }, 160, 90);
     const inv = renderFrame({ source: picture(), effects: layer(invert) }, 160, 90);
@@ -449,4 +450,49 @@ describe("effect motion", () => {
       expect(def.params.some((p) => p.key === "motion" || p.key === "motionSpeed" || p.key === "motionAmount")).toBe(false);
     }
   });
+});
+
+describe("skipped picture", () => {
+  // A paper ground and a filter at normal/1 never read the picture, so as
+  // the first layer the stack does not render the source at frame size.
+  // Reference: the same effect with the picture forced on. Placing the layer
+  // after a no-op soft effect instead is not a fair reference: its cells
+  // are then downsampled from a frame rather than rendered from the source,
+  // which moves dither thresholds and pixelate means by far more than 1.
+  const pixelate = effects.find((e) => e.id === "pixelate")!;
+  const forced = (def: EffectDef): EffectDef => ({ ...def, id: `${def.id}-forced`, grid: { ...def.grid!, picture: true } });
+  const cases: [string, EffectDef, Record<string, ParamValue>][] = [
+    ["paper-ground halftone", halftone, { ground: "paper" }],
+    ["normal/1 pixelate", pixelate, { blend: "normal", opacity: 1 }],
+    ["normal/1 dither", dither, { blend: "normal", opacity: 1 }],
+  ];
+  for (const [name, def, params] of cases) {
+    for (const [where, src] of sources()) {
+      it(`${name} ${where}: first layer matches the layer with the picture forced`, () => {
+        const skipped = renderFrame({ source: src(), effects: layer(def, params) }, 320, 180);
+        const withPicture = renderFrame({ source: src(), effects: layer(forced(def), params) }, 320, 180);
+        const plain = renderFrame({ source: src() }, 320, 180);
+        expect(diffStats(skipped, withPicture).max).toBeLessThanOrEqual(1);
+        expect(diffStats(skipped, plain).max).toBeGreaterThan(20);
+      });
+    }
+  }
+});
+
+describe("stacked mark layers", () => {
+  const ascii = effects.find((e) => e.id === "ascii")!;
+  const tint = effects.find((e) => e.id === "tint")!;
+  const stacks: [string, EffectLayer[]][] = [
+    ["halftone, paper halftone", [{ effect: halftone }, { effect: halftone, params: { ground: "paper" } }]],
+    ["tint, halftone", [{ effect: tint }, { effect: halftone }]],
+    ["blurred halftone, blurred ascii", [{ effect: halftone, params: { blur: 12 } }, { effect: ascii, params: { blur: 6 } }]],
+  ];
+  for (const [name, fx] of stacks) {
+    it(`${name}: renders and is deterministic`, () => {
+      const c = { source: picture(), effects: fx };
+      const a = renderFrame(c, 320, 180);
+      const b = renderFrame(c, 320, 180);
+      expect(framesEqual(a, b)).toBe(true);
+    });
+  }
 });

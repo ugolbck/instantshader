@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { hexToRgb, paramUniform, resolveEffectParams } from "../src/effectParams";
 import { orderByCoverage, toneLookup } from "../src/effects/asciiAtlas";
 import type { EffectDef } from "../src/types";
-import { blendParams, colorModeParams, groundParams, groundPicture, motionParams, responseParams } from "../src/effects/chunks";
+import { blendParams, colorModeParams, filterPicture, groundParams, groundPicture, motionParams, responseParams } from "../src/effects/chunks";
 
 const def: EffectDef = {
   id: "t",
@@ -105,8 +105,14 @@ describe("shared param groups", () => {
     expect(c.find((p) => p.key === "paper")!.when).toEqual({ key: "ground", in: ["paper"] });
   });
 
-  it("groundPicture blurs only an image ground", () => {
+  it("groundPicture blurs an image ground and skips the picture on paper", () => {
     expect(groundPicture({ ground: "image", blur: 6 })).toEqual({ blur: 6 });
-    expect(groundPicture({ ground: "paper", blur: 6 })).toEqual({ blur: 0 });
+    expect(groundPicture({ ground: "paper", blur: 6 })).toBeNull();
+  });
+
+  it("filterPicture skips the picture only at normal, full opacity", () => {
+    expect(filterPicture({ blend: "normal", opacity: 1 })).toBeNull();
+    expect(filterPicture({ blend: "normal", opacity: 0.5 })).toEqual({ blur: 0 });
+    expect(filterPicture({ blend: "screen", opacity: 1 })).toEqual({ blur: 0 });
   });
 });

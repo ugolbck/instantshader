@@ -232,14 +232,12 @@ vec3 colorize(float tone, vec3 src) {
 
 export type ColorMode = "source" | "duotone" | "palette";
 
-/** The param defs that go with COLOR_MODE. `paperAlways` is for effects
- * where paper is a visible ground in every mode (ASCII, Halftone). */
+/** The param defs that go with COLOR_MODE. */
 export function colorModeParams(opts: {
   mode: ColorMode;
   ink?: string;
   paper?: string;
-  paperAlways?: boolean;
-  /** Show paper only while this holds (mark effects: a paper ground). Wins over paperAlways. */
+  /** Show paper only while this holds (mark effects: a paper ground). */
   paperWhen?: { key: string; in: ParamValue[] };
 }): EffectParamDef[] {
   return [
@@ -266,11 +264,7 @@ export function colorModeParams(opts: {
       label: "Paper",
       type: "color",
       default: opts.paper ?? "#f4f1ea",
-      ...(opts.paperWhen
-        ? { when: opts.paperWhen }
-        : opts.paperAlways
-          ? {}
-          : { when: { key: "colorMode", in: ["duotone"] } }),
+      when: opts.paperWhen ?? { key: "colorMode", in: ["duotone"] },
     },
     { key: "invert", label: "Invert", type: "bool", default: false },
   ];
@@ -470,7 +464,15 @@ export function motionParams(): EffectParamDef[] {
   ];
 }
 
-/** grid.picture for mark effects: blur only applies to an image ground. */
-export function groundPicture(p: Record<string, ParamValue>): { blur: number } {
-  return { blur: p.ground === "image" ? (p.blur as number) : 0 };
+/** grid.picture for mark effects. A paper ground never reads the picture,
+ * so it gets none; blur only applies to an image ground. */
+export function groundPicture(p: Record<string, ParamValue>): { blur: number } | null {
+  return p.ground === "image" ? { blur: p.blur as number } : null;
+}
+
+/** grid.picture for filter effects (pixelate, dither). Normal at full
+ * opacity replaces the picture outright (FILTER_COMPOSITE), so it is not
+ * read and the stack skips rendering it. */
+export function filterPicture(p: Record<string, ParamValue>): { blur: number } | null {
+  return p.blend === "normal" && (p.opacity as number) >= 1 ? null : { blur: 0 };
 }

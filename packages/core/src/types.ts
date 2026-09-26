@@ -231,9 +231,10 @@ export type EffectDef = {
      * rather than replacing it (halftone's image ground). Shape sizes and
      * colours still come from the cell buffer; only the backdrop is per
      * pixel. A function returns a blur in reference px applied to that
-     * picture (0 = none).
+     * picture (0 = none), or null when this configuration does not read the
+     * picture, so the stack skips rendering it.
      */
-    picture?: true | ((params: Record<string, ParamValue>) => { blur: number });
+    picture?: true | ((params: Record<string, ParamValue>) => { blur: number } | null);
     fragment: string;
   };
   textures?: EffectTexture[];

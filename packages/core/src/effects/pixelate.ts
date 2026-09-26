@@ -10,7 +10,7 @@
 // 1920x1080 export, 48px cells at 4K, and the same 80x45 cells in both.
 
 import type { EffectDef } from "../types";
-import { BLEND, COMPOSITE, FILTER_COMPOSITE, blendParams } from "./chunks";
+import { BLEND, COMPOSITE, FILTER_COMPOSITE, blendParams, filterPicture } from "./chunks";
 
 const CELL_FRAGMENT = `
 uniform float u_levels;
@@ -60,7 +60,7 @@ export const pixelate: EffectDef = {
   grid: {
     cell: (p) => [p.size as number, p.size as number],
     fragment: CELL_FRAGMENT,
-    picture: true,
+    picture: filterPicture,
   },
   params: [
     { key: "size", label: "Size", min: 2, max: 160, step: 1, default: 13 },

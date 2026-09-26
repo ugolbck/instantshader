@@ -48,7 +48,8 @@ void main() {
 `;
 
 /** Backdrop blur, passes 2 and 3: one axis of a 25-tap Gaussian, in linear
- * light. Sigma is 2..4 small texels, so +-12 taps reach 3 sigma. */
+ * light. Sigma is at most 4 small texels (below 2 only when blurPx < 2),
+ * so +-12 taps reach 3 sigma. */
 const BLUR_PASS_FRAGMENT = `
 uniform sampler2D u_source;
 uniform vec2 u_step;
@@ -711,14 +712,16 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
         // rendered, so they stay the same at every output size.
         if (input === null) renderSourceToCells(grid, cellIn);
         else downsampleToCells(input, grid, cellIn);
-        if (state.def.grid.picture && input === null) {
+        // Evaluated once per layer. null: this configuration never reads
+        // u_picture, so a first layer skips rendering the source at frame size.
+        const pic = state.def.grid.picture;
+        const want = pic === true ? { blur: 0 } : pic ? pic(state.params) : null;
+        if (want && input === null) {
           input = frameTarget(0);
           renderSourceToFrame(input);
         }
-        const pic = state.def.grid.picture;
-        let picture: Target | null = pic ? input : null;
-        const blur = typeof pic === "function" ? pic(state.params).blur : 0;
-        if (picture && blur > 0) picture = blurred(picture, blur);
+        let picture: Target | null = want ? input : null;
+        if (picture && want && want.blur > 0) picture = blurred(picture, want.blur);
         const outIndex: 0 | 1 = input === frameTargets[0] ? 1 : 0;
 
         const cellProgram = state.cell!;
