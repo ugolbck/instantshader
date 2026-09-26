@@ -131,9 +131,11 @@ describe.skipIf(!ENABLED)("visual sheets", () => {
     const gen: Source = { kind: "generator", shader: bloom };
     const media: Source = { kind: "media", media: photo };
     const a = (params: Record<string, string | number | boolean>): EffectLayer[] => [{ effect: ascii, params }];
-    await sheet("ascii-bloom-standard", gen, a({}));
-    await sheet("ascii-photo-dense", media, a({ charset: "dense", size: 16 }));
-    await sheet("ascii-bloom-blocks-palette", gen, a({ charset: "blocks", size: 20, colorMode: "palette" }));
-    await sheet("ascii-photo-duotone-small", media, a({ size: 12, colorMode: "duotone" }));
+    await sheet("ascii-photo-default", media, a({}));
+    await sheet("ascii-bloom-default", gen, a({}));
+    await sheet("ascii-photo-dodge-blur", media, a({ blend: "colorDodge", opacity: 0.8, blur: 5, charset: "minimal" }));
+    await sheet("ascii-photo-uniform", media, a({ style: "uniform", exposure: 0.4 }));
+    await sheet("ascii-bloom-palette", gen, a({ colorMode: "palette" }));
+    await sheet("ascii-bloom-paper-classic", gen, a({ ground: "paper", blend: "normal", size: 24, cycle: 0 }));
   }, 900_000);
 });

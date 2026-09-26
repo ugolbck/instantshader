@@ -24,8 +24,11 @@ const MOTION: Record<string, Record<string, ParamValue>> = {
   // snaps to 5 (odd), so half the loop is an odd number of half-cycles and
   // the frame actually differs.
   halftone: { motion: "wave", motionAmount: 1, motionSpeed: 0.6 },
-  ascii: { cycle: 8 },
+  ascii: { cycle: 8, motion: "twinkle", motionAmount: 1, motionSpeed: 0.6 },
 };
+
+// Params that switch an effect's DEFAULT motion off, for the still test.
+const STILL: Record<string, Record<string, ParamValue>> = { ascii: { cycle: 0 } };
 
 const generator: Source = { kind: "generator", shader: bloom };
 const picture = (): Source => ({ kind: "media", media: testPicture() });
@@ -127,7 +130,7 @@ for (const def of effects) {
     }
 
     it("holds still over a still image when its motion is off", () => {
-      const c = { source: picture(), effects: layer(def) };
+      const c = { source: picture(), effects: layer(def, STILL[def.id]) };
       const a = renderFrame({ ...c, timeMs: 0 }, 320, 180);
       const b = renderFrame({ ...c, timeMs: 5000 }, 320, 180);
       expect(framesEqual(a, b)).toBe(true);

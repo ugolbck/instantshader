@@ -2,10 +2,16 @@
 //
 //   cell stage  per character cell: pick a glyph for the cell's tone, write
 //               glyph index to alpha and the glyph's color to RGB
-//   draw stage  per output pixel: look up the cell's glyph in the atlas
+//   draw stage  per output pixel: look up the cell's glyph in the atlas and
+//               composite its coverage over the backdrop
 //
 // Because the glyph index is decided in the cell buffer, a 900px preview and
 // a 4K export always show the same character in the same cell.
+//
+// GROUND AND BLEND come from the shared composite stage (chunks.ts, GROUND
+// and COMPOSITE): the glyphs are drawn over the picture by default, blended
+// into it, or on paper. Glyph weight is the shared mark strength (RESPONSE),
+// which is also where motion lives. See SPEC-marks.md.
 //
 // Glyphs are chosen by brightness. The sharper alternative is shape matching
 // (Alex Harri's 6-sample shape vectors): it improves edges in photos, but on
@@ -13,7 +19,18 @@
 // this ramp. It would slot into the cell stage without touching the rest.
 
 import type { EffectDef, ParamValue, TextureEnv } from "../types";
-import { COLOR_MODE, colorModeParams } from "./chunks";
+import {
+  BLEND,
+  COLOR_MODE,
+  COMPOSITE,
+  GROUND,
+  RESPONSE,
+  colorModeParams,
+  groundParams,
+  groundPicture,
+  motionParams,
+  responseParams,
+} from "./chunks";
 import { CELL_ASPECT, atlasGlyphHeight, buildAtlas, charsetInfo, toneLookup } from "./asciiAtlas";
 
 const CELL_FRAGMENT = `
@@ -23,11 +40,13 @@ uniform float u_cycleAmount;
 uniform float u_glyphCount;
 uniform sampler2D u_lut;
 ${COLOR_MODE}
+${RESPONSE}
 
 void main() {
   vec3 sc = cellSource().rgb;
-  float tone = luma(sc);
-  if (u_invert > 0.5) tone = 1.0 - tone;
+  // Glyph weight is the shared mark strength: a stronger mark is a denser
+  // glyph, and a cell the density knob empties gets the blank glyph.
+  float tone = markStrength(sc);
 
   // The lookup places glyphs by measured ink coverage: R = the glyph just
   // below this tone, G = the one just above, B = how far between them.
@@ -74,6 +93,9 @@ uniform vec2 u_atlasGrid;    // glyph columns, rows
 uniform vec2 u_atlasSize;    // atlas size in texels
 uniform vec2 u_glyphPx;      // one glyph's size in atlas texels (without gutter)
 ${COLOR_MODE}
+${BLEND}
+${COMPOSITE}
+${GROUND}
 
 void main() {
   vec4 cell = cellValue(cellIndexAt());
@@ -102,8 +124,7 @@ void main() {
   }
   a /= n * n;
 
-  vec3 color = toSrgb(mix(toLinear(u_paper), toLinear(cell.rgb), a));
-  gl_FragColor = vec4(color, 1.0);
+  gl_FragColor = vec4(toSrgb(compositeLinear(backdropAt(gl_FragCoord.xy), cell.rgb, a)), 1.0);
 }
 `;
 
@@ -120,7 +141,7 @@ export const ascii: EffectDef = {
   id: "ascii",
   label: "ASCII",
   fragment: DRAW_FRAGMENT,
-  grid: { cell: cellOf, fragment: CELL_FRAGMENT },
+  grid: { cell: cellOf, fragment: CELL_FRAGMENT, picture: groundPicture },
   textures: [
     {
       uniform: "u_atlas",
@@ -142,6 +163,10 @@ export const ascii: EffectDef = {
     },
   ],
   params: [
+    // Color dodge rather than screen: over a light picture screen barely
+    // lifts it, so the glyphs vanished; dodge keeps them bright and tinted by
+    // the colour underneath while leaving the darks almost untouched.
+    ...groundParams({ ground: "image", blend: "colorDodge", opacity: 1 }),
     {
       key: "charset",
       label: "Characters",
@@ -157,26 +182,46 @@ export const ascii: EffectDef = {
       default: "standard",
     },
     // Character cell height in reference pixels (px at 1080p).
-    { key: "size", label: "Size", min: 8, max: 96, step: 1, default: 24 },
+    { key: "size", label: "Size", min: 8, max: 96, step: 1, default: 10 },
     { key: "smooth", label: "Smooth", type: "bool", default: true },
     // Glyph re-rolls per second. 0 = static.
-    { key: "cycle", label: "Cycle", min: 0, max: 12, step: 1, default: 0 },
-    { key: "cycleAmount", label: "Cycle amount", min: 0, max: 1, step: 0.01, default: 0.3 },
-    ...colorModeParams({ mode: "source", ink: "#e8ffe8", paper: "#000000", paperAlways: true }),
+    { key: "cycle", label: "Cycle", min: 0, max: 12, step: 1, default: 2 },
+    { key: "cycleAmount", label: "Cycle amount", min: 0, max: 1, step: 0.01, default: 0.2 },
+    // A little contrast thins the glyphs in the darks and fills them in the
+    // lights, which is what keeps the picture readable under them.
+    ...responseParams({ contrast: 1.2 }),
+    ...colorModeParams({ mode: "source", ink: "#e8ffe8", paper: "#000000", paperWhen: { key: "ground", in: ["paper"] } }),
+    ...motionParams(),
   ],
   randomParams(rand) {
     const sets = ["standard", "dense", "blocks", "minimal", "binary"];
     const modes = ["source", "duotone", "palette"];
+    // Glyphs carry the lifted source colour, so over the picture they read
+    // with normal or a lightening blend; multiply would sink them into it.
+    // On the black paper, normal is the classic terminal look.
+    const ground = rand() < 0.8 ? "image" : "paper";
+    const blends = ground === "paper" ? ["normal"] : ["normal", "screen", "screen", "overlay", "colorDodge"];
     return {
+      ground,
+      blend: blends[Math.floor(rand() * blends.length)],
+      opacity: 0.7 + rand() * 0.3,
+      blur: 0,
       charset: sets[Math.floor(rand() * sets.length)],
       size: Math.round(14 + rand() * 30),
       smooth: true,
-      cycle: 0,
-      cycleAmount: 0.3,
+      cycle: 2,
+      cycleAmount: 0.2,
+      style: "filled",
+      exposure: 0,
+      contrast: 1,
+      density: 1,
       colorMode: modes[Math.floor(rand() * modes.length)],
       ink: "#e8ffe8",
       paper: "#000000",
       invert: false,
+      motion: "none",
+      motionSpeed: 0.5,
+      motionAmount: 0.5,
     };
   },
 };
