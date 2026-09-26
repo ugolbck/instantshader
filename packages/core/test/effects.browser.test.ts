@@ -3,6 +3,7 @@ import { bloom, createStackRenderer, effects, gridFor, halo, renderGradientFrame
 import type { EffectDef, EffectLayer, ParamValue, Source } from "../src/index";
 import { dither } from "../src/index";
 import { resolveEffectParams } from "../src/effectParams";
+import { BLEND, blendParams } from "../src/effects/chunks";
 import {
   COLORS,
   diffStats,
@@ -309,4 +310,44 @@ describe("soft effects", () => {
       renderFrame({ source: generator, effects: [{ effect: invert }, { effect: pixelate }, { effect: invert }] }, 160, 90),
     ).not.toThrow();
   });
+});
+
+describe("blend math", () => {
+  // A one-line soft effect: blendOf(b, s) for two flat colours.
+  const probe: EffectDef = {
+    id: "test-blend",
+    label: "Blend",
+    fragment: `uniform vec3 u_b;\nuniform vec3 u_s;\n${BLEND}\nvoid main() { gl_FragColor = vec4(blendOf(u_b, u_s), 1.0); }`,
+    params: [
+      ...blendParams({ blend: "normal", opacity: 1 }),
+      { key: "b", label: "b", type: "color", default: "#000000" },
+      { key: "s", label: "s", type: "color", default: "#000000" },
+    ],
+    randomParams: () => ({}),
+  };
+  const w3c: Record<string, (b: number, s: number) => number> = {
+    normal: (_b, s) => s,
+    multiply: (b, s) => b * s,
+    screen: (b, s) => b + s - b * s,
+    overlay: (b, s) => (b <= 0.5 ? 2 * b * s : 1 - 2 * (1 - b) * (1 - s)),
+    softLight: (b, s) => {
+      const d = b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b);
+      return s <= 0.5 ? b - (1 - 2 * s) * b * (1 - b) : b + (2 * s - 1) * (d - b);
+    },
+    colorDodge: (b, s) => (b === 0 ? 0 : s >= 1 ? 1 : Math.min(1, b / (1 - s))),
+  };
+  const hex = (v: number) => "#" + Math.round(v * 255).toString(16).padStart(2, "0").repeat(3);
+
+  for (const [mode, f] of Object.entries(w3c)) {
+    it(`${mode} matches the W3C formula`, () => {
+      for (const b of [0, 0.2, 0.5, 0.8, 1]) {
+        for (const s of [0, 0.3, 0.5, 0.7, 1]) {
+          const px = renderFrame({ source: generator, effects: [{ effect: probe, params: { blend: mode, b: hex(b), s: hex(s) } }] }, 4, 4);
+          const bq = Math.round(b * 255) / 255;
+          const sq = Math.round(s * 255) / 255;
+          expect(Math.abs(px.data[0] - f(bq, sq) * 255)).toBeLessThanOrEqual(1.5);
+        }
+      }
+    });
+  }
 });

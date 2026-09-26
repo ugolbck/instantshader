@@ -3,7 +3,7 @@
 // stage preambles to an effect's fragment source, the same way BASE_UNIFORMS
 // alone is prepended to a generator's.
 
-import type { EffectParamDef } from "../types";
+import type { EffectParamDef, ParamValue } from "../types";
 
 /** sRGB transfer functions. Blending and averaging must happen in linear
  * light: a fine black/white checkerboard averaged in gamma space comes out
@@ -239,6 +239,8 @@ export function colorModeParams(opts: {
   ink?: string;
   paper?: string;
   paperAlways?: boolean;
+  /** Show paper only while this holds (mark effects: a paper ground). Wins over paperAlways. */
+  paperWhen?: { key: string; in: ParamValue[] };
 }): EffectParamDef[] {
   return [
     {
@@ -264,8 +266,205 @@ export function colorModeParams(opts: {
       label: "Paper",
       type: "color",
       default: opts.paper ?? "#f4f1ea",
-      ...(opts.paperAlways ? {} : { when: { key: "colorMode", in: ["duotone"] } }),
+      ...(opts.paperWhen
+        ? { when: opts.paperWhen }
+        : opts.paperAlways
+          ? {}
+          : { when: { key: "colorMode", in: ["duotone"] } }),
     },
     { key: "invert", label: "Invert", type: "bool", default: false },
   ];
+}
+
+/**
+ * Blend modes, W3C Compositing and Blending Level 1, computed on
+ * gamma-encoded sRGB like CSS and every image editor. b is the backdrop, s
+ * the source (the mark or the filter's colour). Overlay is hard light with
+ * the roles swapped. Color dodge: 0 where b is 0, else min(1, b / (1 - s)).
+ */
+export const BLEND: string = `
+uniform float u_blend;
+vec3 blendScreen(vec3 b, vec3 s) { return b + s - b * s; }
+vec3 blendHardLight(vec3 b, vec3 s) {
+  return mix(b * 2.0 * s, blendScreen(b, 2.0 * s - 1.0), step(0.5, s));
+}
+vec3 blendSoftLight(vec3 b, vec3 s) {
+  vec3 d = mix(sqrt(b), ((16.0 * b - 12.0) * b + 4.0) * b, step(b, vec3(0.25)));
+  return mix(b - (1.0 - 2.0 * s) * b * (1.0 - b), b + (2.0 * s - 1.0) * (d - b), step(0.5, s));
+}
+vec3 blendColorDodge(vec3 b, vec3 s) {
+  return min(vec3(1.0), b / max(1.0 - s, vec3(1e-5))) * step(1e-5, b);
+}
+vec3 blendOf(vec3 b, vec3 s) {
+  if (u_blend < 0.5) return s;
+  if (u_blend < 1.5) return b * s;
+  if (u_blend < 2.5) return blendScreen(b, s);
+  if (u_blend < 3.5) return blendHardLight(s, b);
+  if (u_blend < 4.5) return blendSoftLight(b, s);
+  return blendColorDodge(b, s);
+}
+`;
+
+/** Draw stage: the layer below and the blend-then-fade composite. The
+ * blended colour is faded in by coverage x opacity in linear light, so an
+ * antialiased edge keeps its true weight. */
+export const COMPOSITE: string = `
+uniform float u_opacity;
+uniform sampler2D u_picture;
+vec3 pictureAt(vec2 fc) { return texture2D(u_picture, fc / u_resolution).rgb; }
+vec3 compositeLinear(vec3 b, vec3 s, float a) {
+  return mix(toLinear(b), toLinear(blendOf(b, s)), clamp(a * u_opacity, 0.0, 1.0));
+}
+`;
+
+/** Mark effects: what the marks are drawn on. */
+export const GROUND: string = `
+uniform float u_ground;
+vec3 backdropAt(vec2 fc) { return u_ground < 0.5 ? pictureAt(fc) : u_paper; }
+`;
+
+/** Filter effects (a whole replacement picture per cell) over the layer
+ * below. Normal at full opacity hands the colour back untouched: no linear
+ * round trip, so whole-pixel cells stay exact at 1080p and 4K. */
+export const FILTER_COMPOSITE: string = `
+vec3 overPicture(vec3 s) {
+  if (u_blend < 0.5 && u_opacity >= 1.0) return s;
+  return toSrgb(compositeLinear(pictureAt(gl_FragCoord.xy), s, 1.0));
+}
+`;
+
+/**
+ * Cell stage of a mark effect: the cell's tone becomes a mark strength in
+ * 0..1. See SPEC-marks.md, Response.
+ *
+ * Direction: marks grow where they show. On an image ground a darkening
+ * blend (multiply) grows them in the darks and every other blend in the
+ * brights; on paper they grow away from the paper. Invert flips it.
+ *
+ * Motion multiplies the strength, so blank cells stay blank. Its angular
+ * speed is snapped to whole cycles per loop and floored at one: it is the
+ * effect's own motion, and freezing it on a short loop would read as broken.
+ */
+export const RESPONSE: string = `
+uniform float u_style;
+uniform float u_exposure;
+uniform float u_contrast;
+uniform float u_density;
+uniform float u_ground;
+uniform float u_blend;
+uniform float u_motion;
+uniform float u_motionSpeed;
+uniform float u_motionAmount;
+
+bool growsInBrights() {
+  if (u_ground > 0.5) return luma(u_paper) < 0.5;
+  return abs(u_blend - 1.0) > 0.5;
+}
+
+float motionAt(vec2 cell) {
+  if (u_motion < 0.5) return 0.0;
+  float w = TAU * u_motionSpeed;
+  if (u_loop > 0.0) w = TAU * max(1.0, floor(u_motionSpeed * u_loop + 0.5)) / u_loop;
+  float ph = w * u_time;
+  if (u_motion < 1.5) return sin(ph);
+  if (u_motion < 2.5) {
+    // 1.5 waves per frame height, travelling along a fixed diagonal.
+    vec2 pos = cell * u_cellRef / u_refSize.y;
+    return sin(ph - TAU * 1.5 * dot(pos, vec2(0.857, 0.514)));
+  }
+  return sin(ph + TAU * hash12(cell + 13.1));
+}
+
+float markStrength(vec3 c) {
+  float tone = u_style < 0.5 ? luma(c) : 0.5;
+  tone = clamp(tone * exp2(2.0 * u_exposure), 0.0, 1.0);
+  float s = growsInBrights() ? tone : 1.0 - tone;
+  if (u_invert > 0.5) s = 1.0 - s;
+  s = clamp((s - 0.5) * u_contrast + 0.5, 0.0, 1.0);
+  s = clamp(s * (1.0 + u_motionAmount * motionAt(cellIndex())), 0.0, 1.0);
+  if (hash12(cellIndex() + vec2(71.3, 19.7)) >= u_density) s = 0.0;
+  return s;
+}
+`;
+
+export type BlendMode = "normal" | "multiply" | "screen" | "overlay" | "softLight" | "colorDodge";
+
+/** Append only: the uniform is the option's index. */
+export const BLEND_OPTIONS: { value: BlendMode; label: string }[] = [
+  { value: "normal", label: "Normal" },
+  { value: "multiply", label: "Multiply" },
+  { value: "screen", label: "Screen" },
+  { value: "overlay", label: "Overlay" },
+  { value: "softLight", label: "Soft light" },
+  { value: "colorDodge", label: "Color dodge" },
+];
+
+export function blendParams(d: { blend: BlendMode; opacity: number }): EffectParamDef[] {
+  return [
+    { key: "blend", label: "Blend", type: "enum", options: BLEND_OPTIONS, default: d.blend },
+    { key: "opacity", label: "Opacity", min: 0, max: 1, step: 0.01, default: d.opacity },
+  ];
+}
+
+export function groundParams(d: { ground: "image" | "paper"; blend: BlendMode; opacity: number }): EffectParamDef[] {
+  return [
+    {
+      key: "ground",
+      label: "Ground",
+      type: "enum",
+      options: [
+        { value: "image", label: "Image" },
+        { value: "paper", label: "Paper" },
+      ],
+      default: d.ground,
+    },
+    ...blendParams(d),
+    // Backdrop blur in reference px (px at 1080p).
+    { key: "blur", label: "Blur", min: 0, max: 40, step: 0.5, default: 0, when: { key: "ground", in: ["image"] } },
+  ];
+}
+
+export function responseParams(d: { contrast: number }): EffectParamDef[] {
+  return [
+    {
+      key: "style",
+      label: "Style",
+      type: "enum",
+      options: [
+        { value: "filled", label: "Filled" },
+        { value: "uniform", label: "Uniform" },
+      ],
+      default: "filled",
+    },
+    { key: "exposure", label: "Exposure", min: -1, max: 1, step: 0.01, default: 0 },
+    { key: "contrast", label: "Contrast", min: 0, max: 2, step: 0.01, default: d.contrast },
+    { key: "density", label: "Density", min: 0, max: 1, step: 0.01, default: 1 },
+  ];
+}
+
+const MOVING = { key: "motion", in: ["breathe", "wave", "twinkle"] };
+
+export function motionParams(): EffectParamDef[] {
+  return [
+    {
+      key: "motion",
+      label: "Motion",
+      type: "enum",
+      options: [
+        { value: "none", label: "None" },
+        { value: "breathe", label: "Breathe" },
+        { value: "wave", label: "Wave" },
+        { value: "twinkle", label: "Twinkle" },
+      ],
+      default: "none",
+    },
+    // Cycles per second; whole cycles per loop when looping.
+    { key: "motionSpeed", label: "Motion speed", min: 0.05, max: 2, step: 0.05, default: 0.5, when: MOVING },
+    { key: "motionAmount", label: "Motion amount", min: 0, max: 1, step: 0.01, default: 0.5, when: MOVING },
+  ];
+}
+
+/** grid.picture for mark effects: blur only applies to an image ground. */
+export function groundPicture(p: Record<string, ParamValue>): { blur: number } {
+  return { blur: p.ground === "image" ? (p.blur as number) : 0 };
 }

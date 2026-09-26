@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { hexToRgb, paramUniform, resolveEffectParams } from "../src/effectParams";
 import { orderByCoverage, toneLookup } from "../src/effects/asciiAtlas";
 import type { EffectDef } from "../src/types";
+import { blendParams, colorModeParams, groundParams, groundPicture, motionParams, responseParams } from "../src/effects/chunks";
 
 const def: EffectDef = {
   id: "t",
@@ -72,5 +73,40 @@ describe("ASCII tone lookup", () => {
     expect(at(153).slice(0, 2)).toEqual([1, 2]);
     expect(Math.abs(at(153)[2] - 127.5)).toBeLessThanOrEqual(0.5);
     expect(at(255)[0]).toBe(2);
+  });
+});
+
+describe("shared param groups", () => {
+  it("ground group: ground, blend, opacity, blur (blur only on an image ground)", () => {
+    const g = groundParams({ ground: "image", blend: "screen", opacity: 1 });
+    expect(g.map((p) => p.key)).toEqual(["ground", "blend", "opacity", "blur"]);
+    expect(g.find((p) => p.key === "blend")!.default).toBe("screen");
+    expect(g.find((p) => p.key === "blur")!.when).toEqual({ key: "ground", in: ["image"] });
+  });
+
+  it("blend options are appended, never reordered", () => {
+    const blend = blendParams({ blend: "normal", opacity: 1 })[0];
+    if (blend.type !== "enum") throw new Error("blend must be an enum");
+    expect(blend.options.map((o) => o.value)).toEqual(["normal", "multiply", "screen", "overlay", "softLight", "colorDodge"]);
+  });
+
+  it("response and motion groups", () => {
+    expect(responseParams({ contrast: 1.15 }).map((p) => [p.key, p.default])).toEqual([
+      ["style", "filled"], ["exposure", 0], ["contrast", 1.15], ["density", 1],
+    ]);
+    const m = motionParams();
+    expect(m.map((p) => p.key)).toEqual(["motion", "motionSpeed", "motionAmount"]);
+    expect(m[0].default).toBe("none");
+    expect(m[1].when).toEqual({ key: "motion", in: ["breathe", "wave", "twinkle"] });
+  });
+
+  it("paperWhen scopes the paper control", () => {
+    const c = colorModeParams({ mode: "source", paperWhen: { key: "ground", in: ["paper"] } });
+    expect(c.find((p) => p.key === "paper")!.when).toEqual({ key: "ground", in: ["paper"] });
+  });
+
+  it("groundPicture blurs only an image ground", () => {
+    expect(groundPicture({ ground: "image", blur: 6 })).toEqual({ blur: 6 });
+    expect(groundPicture({ ground: "paper", blur: 6 })).toEqual({ blur: 0 });
   });
 });
