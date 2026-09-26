@@ -320,8 +320,8 @@ describe("tint", () => {
 });
 
 describe("soft effects", () => {
-  // No shipped effect is soft any more (halftone moved to a lattice), so the
-  // path is exercised with a minimal one: invert the layer below.
+  // Tint is the one shipped soft effect; the path is exercised with a
+  // minimal one whose output is exact: invert the layer below.
   const invert: EffectDef = {
     id: "test-invert",
     label: "Invert",

@@ -285,8 +285,14 @@ An effect redraws a picture. The picture can be one of the shaders above or an i
   <tr>
     <td width="25%"><img src=".github/assets/pixelate.jpg" alt="Pixelate" /><br /><b>Pixelate</b> <code>pixelate</code><br />Flat cells, with optional posterize and grid lines.</td>
     <td width="25%"><img src=".github/assets/dither.jpg" alt="Dither" /><br /><b>Dither</b> <code>dither</code><br />Bayer or blue-noise patterns, two to eight levels.</td>
-    <td width="25%"><img src=".github/assets/halftone.jpg" alt="Halftone" /><br /><b>Halftone</b> <code>halftone</code><br />Dots, lines or diamonds blended over the picture, or on paper.</td>
+    <td width="25%"><img src=".github/assets/halftone.jpg" alt="Halftone" /><br /><b>Halftone</b> <code>halftone</code><br />Dots, lines or diamonds over the picture, or on paper.</td>
     <td width="25%"><img src=".github/assets/ascii.jpg" alt="ASCII" /><br /><b>ASCII</b> <code>ascii</code><br />Characters picked by brightness, six sets.</td>
+  </tr>
+  <tr>
+    <td><img src=".github/assets/tint.jpg" alt="Tint" /><br /><b>Tint</b> <code>tint</code><br />Recolours by brightness, in two colours or the palette.</td>
+    <td></td>
+    <td></td>
+    <td></td>
   </tr>
 </table>
 
@@ -321,21 +327,43 @@ mountStack(el, {
 
 In React that is `<ShaderStack source={{ kind: "media", media: img }} colors={...} effects={...} />`. `effects` is a list, bottom layer first, so effects can stack.
 
+### How effects combine with the picture
+
+Halftone and ASCII draw marks over the picture: shapes, or characters. A bigger mark is a larger shape or a heavier character. They share these params:
+
+| Param | Range | What it does |
+| --- | --- | --- |
+| `ground` | `image`, `paper` | What the marks are drawn on: the picture, which shows between them, or a flat sheet of `paper` |
+| `blend` | `normal`, `multiply`, `screen`, `overlay`, `softLight`, `colorDodge` | How each mark combines with what is under it (CSS / W3C blend modes) |
+| `opacity` | 0 – 1 | Strength of the marks over the ground |
+| `blur` | 0 – 40 | Blurs the picture behind the marks. Image ground only |
+| `style` | `filled`, `uniform` | `filled` sizes each mark by the tone under it. `uniform` gives every mark the same size |
+| `exposure` | -1 – 1 | Brightens or darkens the tone that sizes the marks. The picture itself is unchanged |
+| `contrast` | 0 – 2 | Tone contrast before sizing the marks |
+| `density` | 0 – 1 | Share of cells that get a mark. The rest stay empty |
+
+Marks grow where they show. On an image ground, `multiply` grows them in the dark areas and every other blend in the bright areas. On paper, they grow where the picture differs most from the paper: in the dark areas on a light sheet, in the bright areas on a dark one. `invert` flips it.
+
+Dither and pixelate take `blend` and `opacity` only. `blend: "normal"` with `opacity: 1` replaces the picture.
+
+Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (the palette's colours). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout: dither outputs `levels` steps of the ramp (set `levels` to the number of colours to get exactly those), and halftone and ASCII colour each dot or glyph with the nearest palette stop, flat. On halftone and ASCII, `paper` only shows on a paper ground.
+
+Tint recolours whatever is below it, so stack it after any effect, or use it alone.
+
 ### Effect params
 
 Same rules as shader params: pass a subset, the rest keep their defaults. Sizes are in pixels at 1080p, so a `size` of 4 is 4px cells in a 1920x1080 export and 8px cells at 4K, with the same number of cells in both.
-
-Dither, halftone and ASCII share the colour params. `colorMode` is `source` (keep the picture's colours), `duotone` (`ink` on `paper`) or `palette` (the palette's colours). `invert` flips the tone scale. Over a shader, palette mode keeps the gradient's own colour layout: dither outputs `levels` steps of the ramp (set `levels` to the number of colours to get exactly those), and halftone and ASCII colour each dot or glyph with the nearest palette stop, flat.
 
 <details>
 <summary><b>Pixelate</b></summary>
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
-| `size` | 2 – 160 | 24 | Cell size |
+| `size` | 2 – 160 | 13 | Cell size |
 | `levels` | 0 – 16 | 0 | Colours per channel. 0 keeps full colour |
-| `gap` | 0 – 0.4 | 0 | Grid lines, as a fraction of the cell |
+| `gap` | 0 – 0.4 | 0.08 | Grid lines, as a fraction of the cell |
 | `gapColor` | colour | `#000000` | Colour of the grid lines |
+| `blend`, `opacity` | | `normal`, 1 | See above |
 
 </details>
 
@@ -350,7 +378,10 @@ Dither, halftone and ASCII share the colour params. `colorMode` is `source` (kee
 | `bias` | -0.5 – 0.5 | 0 | Shifts every tone before quantizing |
 | `linear` | on/off | off | Threshold in linear light. Physically accurate, but dark gradients lose detail |
 | `shimmer` | 0 – 12 | 0 | Pattern jumps per second. 0 is static |
-| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above |
+| `colorMode`, `ink`, `paper`, `invert` | | `duotone`, `#000000`, `#ffffff` | See above |
+| `blend`, `opacity` | | `screen`, 0.6 | See above |
+
+By default the dither is white dots screened over the picture: black cells leave the picture as it is, white cells lighten it. For a full-frame dither in the picture's colours, use `{ colorMode: "source", blend: "normal", opacity: 1 }`.
 
 Floyd-Steinberg and the other error-diffusion dithers are not included. They are sequential, so a fragment shader cannot run them. Blue noise is the pattern that looks closest.
 
@@ -361,20 +392,17 @@ Floyd-Steinberg and the other error-diffusion dithers are not included. They are
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
-| `ground` | `image`, `paper` | `image` | What the shapes are drawn on: the picture below, which shows between them, or a flat sheet of `paper` (classic print) |
-| `blend` | `normal`, `multiply`, `screen`, `overlay`, `softLight` | `screen` | How each shape combines with what is under it (CSS / W3C blend modes) |
-| `opacity` | 0 – 1 | 1 | Strength of the shapes over the ground |
+| `ground`, `blend`, `opacity`, `blur` | | `image`, `screen`, 1, 0 | See above |
 | `grid` | `square`, `hex` | `square` | Screen layout |
 | `shape` | `dot`, `line`, `square` | `square` | What each cell draws. `square` at 45° is a diamond |
 | `size` | 6 – 160 | 20 | Screen pitch |
 | `angle` | 0 – 180 | 45 | Screen angle, in degrees |
 | `radius` | 0.2 – 1.5 | 0.75 | Shape size. Above 1, neighbouring shapes merge where they are largest |
 | `softness` | 0 – 1 | 0.1 | Blurs shape edges |
-| `contrast` | 0 – 2 | 1.15 | Tone contrast before sizing the shapes |
-| `pulse` | 0 – 1 | 0 | Shapes swell and shrink in a wave across the frame |
-| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above. `paper` shows only on a paper ground |
+| `style`, `exposure`, `contrast`, `density` | | `filled`, 0, 1.15, 1 | See above |
+| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above |
 
-Shapes grow where their blend has the most effect: screened shapes can only lighten, so they grow in the bright areas; with any other blend they grow in the dark areas, as in print. `invert` flips it. For the old look, shapes on a sheet, use `{ ground: "paper", blend: "normal" }`.
+For shapes on a sheet, as in print, use `{ ground: "paper", blend: "normal" }`.
 
 </details>
 
@@ -383,14 +411,30 @@ Shapes grow where their blend has the most effect: screened shapes can only ligh
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
+| `ground`, `blend`, `opacity`, `blur` | | `image`, `colorDodge`, 1, 0 | See above |
 | `charset` | `standard`, `dense`, `blocks`, `minimal`, `binary`, `katakana` | `standard` | Character set |
-| `size` | 8 – 96 | 24 | Character height |
+| `size` | 8 – 96 | 10 | Character height |
 | `smooth` | on/off | on | Dithers between neighbouring characters so gradients don't band |
-| `cycle` | 0 – 12 | 0 | Character re-rolls per second. 0 is static |
-| `cycleAmount` | 0 – 1 | 0.3 | How far a re-roll can move along the character ramp |
-| `colorMode`, `ink`, `paper`, `invert` | | `source` | See above. `paper` is the background in every mode |
+| `cycle` | 0 – 12 | 2 | Character re-rolls per second. 0 is static |
+| `cycleAmount` | 0 – 1 | 0.2 | Share of characters that re-roll each time. Higher also lets a character jump further along the set |
+| `style`, `exposure`, `contrast`, `density` | | `filled`, 0, 1.2, 1 | See above |
+| `colorMode`, `ink`, `paper`, `invert` | | `source`, `#e8ffe8`, `#000000` | See above |
+
+For the classic terminal look, characters on black, use `{ ground: "paper", blend: "normal" }`.
 
 Characters come from the system monospace font unless you pass `fontFamily` to the mount. Load a custom font with `document.fonts.load` first.
+
+</details>
+
+<details>
+<summary><b>Tint</b></summary>
+
+| Param | Range | Default | What it does |
+| --- | --- | --- | --- |
+| `mode` | `duotone`, `palette` | `duotone` | Maps each pixel's brightness to a colour: from `dark` to `light`, or along the palette |
+| `dark` | colour | `#1b1a4a` | Colour for black. Duotone only |
+| `light` | colour | `#f2c6a0` | Colour for white. Duotone only |
+| `amount` | 0 – 1 | 1 | Mix between the original colours (0) and the mapped ones (1) |
 
 </details>
 

@@ -3,8 +3,8 @@
 # instantshader
 
 Animated WebGL gradient shaders with zero dependencies. Mount a live, resizable
-gradient into any DOM element, put dither, pixelate, halftone or ASCII effects
-over it or over your own image, or render a single frame to a detached canvas
+gradient into any DOM element, put dither, pixelate, halftone, ASCII or tint
+effects over it or over your own image, or render a single frame to a detached canvas
 for export pipelines. Built by [InstantGradient](https://instantgradient.com/app).
 
 ## Install
@@ -70,8 +70,11 @@ the whole registry (importing either pulls every shader).
 ## Effects
 
 An effect redraws a picture: a shader's output, or an image, canvas or video
-frame you supply. Four are included: `pixelate`, `dither`, `halftone` and
-`ascii`.
+frame you supply. Five are included: `pixelate`, `dither`, `halftone`,
+`ascii` and `tint`. They draw over the picture rather than replacing it:
+`ground` picks the picture or a flat paper sheet under halftone and ASCII
+marks, and `blend` and `opacity` set how the effect mixes with what is below
+(tint uses `amount` instead).
 
 ```ts
 import { mountStack, bloom, dither } from "instantshader";

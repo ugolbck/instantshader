@@ -5,7 +5,7 @@
 React bindings for [instantshader](https://www.npmjs.com/package/instantshader), a
 zero-dependency animated WebGL gradient engine. Drop a `<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>` or
 `<Whorl>` component into any sized wrapper to mount a live, animated gradient, and
-add dither, pixelate, halftone or ASCII effects over it or over your own image.
+add dither, pixelate, halftone, ASCII or tint effects over it or over your own image.
 Built by [InstantGradient](https://instantgradient.com/app).
 
 ## Install
@@ -95,8 +95,8 @@ import { ShaderStack, halftone } from "@instantshader/react";
 ```
 
 Changing `effects` or their params updates the canvas in place. A new
-`source`, `seed`, `background` or `fontFamily` remounts it. The four effect
-defs (`pixelate`, `dither`, `halftone`, `ascii`) are re-exported from here,
+`source`, `seed`, `background` or `fontFamily` remounts it. The five effect
+defs (`pixelate`, `dither`, `halftone`, `ascii`, `tint`) are re-exported from here,
 and the [repository README](https://github.com/ugolbck/instantshader#effects)
 lists every param with its range.
 

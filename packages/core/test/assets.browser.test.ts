@@ -6,7 +6,7 @@
 
 import { describe, it } from "vitest";
 import { commands } from "vitest/browser";
-import { ascii, bloom, burst, dither, dune, flow, glint, halftone, halo, nacre, pixelate, renderStackFrame, silk } from "../src/index";
+import { ascii, bloom, burst, dither, dune, flow, glint, halftone, halo, nacre, pixelate, renderStackFrame, silk, tint } from "../src/index";
 import type { EffectLayer, Source } from "../src/index";
 
 const ENABLED = Boolean((import.meta as unknown as { env: Record<string, string> }).env.VITE_ASSETS);
@@ -20,17 +20,19 @@ async function save(name: string, source: Source, effects: EffectLayer[], colors
 
 describe.skipIf(!ENABLED)("readme assets", () => {
   it("renders one image per effect", async () => {
-    await save("pixelate", { kind: "generator", shader: flow }, [{ effect: pixelate, params: { size: 36, levels: 6 } }],
+    await save("pixelate", { kind: "generator", shader: flow }, [{ effect: pixelate, params: {} }],
       ["#4f46e5", "#ec4899", "#22d3ee"], 12, 3000);
     await save("dither", { kind: "generator", shader: bloom },
-      [{ effect: dither, params: { pattern: "blueNoise", size: 3, colorMode: "palette", levels: 4 } }],
+      [{ effect: dither, params: {} }],
       ["#140f30", "#9c2168", "#eb6a4e", "#fcd87c"], 3, 3000);
     await save("halftone", { kind: "generator", shader: halo },
       [{ effect: halftone, params: {} }],
       ["#081A3D", "#123A73", "#1E63AC", "#4C9EDB", "#AEDAF7"], 5, 2000);
     await save("ascii", { kind: "generator", shader: dune },
-      [{ effect: ascii, params: { size: 30, colorMode: "source", paper: "#050505" } }],
+      [{ effect: ascii, params: {} }],
       ["#FF2ED1", "#00F5A0", "#FFE600", "#00D1FF"], 7, 2500);
+    await save("tint", { kind: "generator", shader: flow }, [{ effect: tint, params: {} }],
+      ["#4f46e5", "#ec4899", "#22d3ee"], 12, 3000);
   }, 120_000);
 
   it("renders one image per newer look", async () => {
