@@ -63,11 +63,11 @@ export const pixelate: EffectDef = {
     picture: true,
   },
   params: [
-    { key: "size", label: "Size", min: 2, max: 160, step: 1, default: 24 },
+    { key: "size", label: "Size", min: 2, max: 160, step: 1, default: 13 },
     // Colors per channel. 0 = keep full color.
     { key: "levels", label: "Levels", min: 0, max: 16, step: 1, default: 0 },
     // Grid lines, as a fraction of the cell. Gives the LED-wall / mosaic look.
-    { key: "gap", label: "Gap", min: 0, max: 0.4, step: 0.01, default: 0 },
+    { key: "gap", label: "Gap", min: 0, max: 0.4, step: 0.01, default: 0.08 },
     { key: "gapColor", label: "Gap color", type: "color", default: "#000000" },
     ...blendParams({ blend: "normal", opacity: 1 }),
   ],

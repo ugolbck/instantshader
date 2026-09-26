@@ -93,6 +93,7 @@ describe.skipIf(!ENABLED)("visual sheets", () => {
     const photo = await loadPhoto();
     const gen: Source = { kind: "generator", shader: bloom };
     const media: Source = { kind: "media", media: photo };
+    await sheet("pixelate-photo-default", media, [{ effect: pixelate, params: {} }]);
     await sheet("pixelate-bloom-24", gen, [{ effect: pixelate, params: { size: 24 } }]);
     await sheet("pixelate-bloom-7-gap", gen, [{ effect: pixelate, params: { size: 7, gap: 0.15, levels: 5 } }]);
     await sheet("pixelate-photo-16", media, [{ effect: pixelate, params: { size: 16 } }]);

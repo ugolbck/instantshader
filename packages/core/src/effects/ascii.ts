@@ -60,13 +60,22 @@ void main() {
   float t = u_smooth > 0.5 ? 0.02 + 0.96 * hash12(cellIndex() + 0.5) : 0.5;
   float glyph = l.b > t ? hi : lo;
 
-  // Cycle: every step each cell re-rolls its glyph among neighbours of
-  // similar weight, so the picture flickers but stays readable. Blank cells
+  // Cycle: every step a share of the cells re-rolls its glyph among
+  // neighbours of similar weight, so the picture flickers but stays
+  // readable. cycleAmount is that share, and also how far a cell may move
+  // (one glyph at small amounts, up to a quarter of the set at 1): a small
+  // amount must flicker a few cells, not round every move down to nothing,
+  // which is what a pure distance scale did on a 10-glyph set. Blank cells
   // stay blank, or dark areas would fill with sparks.
   if (u_cycle > 0.0 && glyph > 0.5) {
-    float h = hash12(cellIndex() + vec2(37.0, 17.0) * loopStep(u_cycle) + u_seed);
-    float span = u_cycleAmount * u_glyphCount * 0.25;
-    glyph = clamp(glyph + floor((h * 2.0 - 1.0) * span + 0.5), 1.0, u_glyphCount - 1.0);
+    float step = loopStep(u_cycle);
+    float pick = hash12(cellIndex() + vec2(11.0, 53.0) * step + u_seed + 3.1);
+    if (pick < u_cycleAmount) {
+      float h = hash12(cellIndex() + vec2(37.0, 17.0) * step + u_seed);
+      float reach = max(1.0, floor(u_cycleAmount * u_glyphCount * 0.25));
+      float move = (h < 0.5 ? -1.0 : 1.0) * (1.0 + floor(fract(h * 2.0) * reach));
+      glyph = clamp(glyph + move, 1.0, u_glyphCount - 1.0);
+    }
   }
 
   // Glyph color. Tone already lives in the glyph's density, so source colors

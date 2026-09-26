@@ -21,7 +21,7 @@ const CASES: [string, string, () => Source, Record<string, ParamValue>, number][
   ["ascii", "black-paper-gen", () => gen, { size: 24, cycle: 0, contrast: 1, ground: "paper", blend: "normal", colorMode: "palette" }, 0.5],
   ["dither", "duotone", media, { colorMode: "duotone", ink: "#111111", paper: "#f4f1ea", blend: "normal", opacity: 1 }, 0],
   ["dither", "palette-gen", () => gen, { colorMode: "palette", levels: 4, blend: "normal", opacity: 1 }, 0],
-  ["pixelate", "default", media, { blend: "normal", opacity: 1 }, 0],
+  ["pixelate", "default", media, { blend: "normal", opacity: 1, size: 24, gap: 0 }, 0],
 ];
 
 function toB64(d: Uint8ClampedArray): string {

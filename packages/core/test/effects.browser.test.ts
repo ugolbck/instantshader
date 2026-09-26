@@ -18,17 +18,15 @@ import {
 // no motion of its own.
 const MOTION: Record<string, Record<string, ParamValue>> = {
   dither: { shimmer: 8 },
-  // cycleAmount needs to clear glyphCount * 0.25's reroll window before a
-  // hash can ever push a glyph to a neighbour; the default 0.2 sits under
-  // that for the 10-glyph standard set, so it would never reroll here.
-  ascii: { cycle: 8, cycleAmount: 1 },
+  ascii: { cycle: 8 },
 };
 
 // The classic full-frame output, for the cell-exactness test: the filters'
 // default blends mix in the picture, which is not a per-cell value.
 const FIDELITY: Record<string, Record<string, ParamValue>> = {
   dither: { blend: "normal", opacity: 1, colorMode: "source" },
-  pixelate: { blend: "normal", opacity: 1 },
+  // gap: 0, or the default gap lines would break up the cell's uniform fill.
+  pixelate: { blend: "normal", opacity: 1, gap: 0 },
 };
 
 // Params that switch an effect's DEFAULT motion off, for the still test.
@@ -151,6 +149,22 @@ for (const def of effects) {
   });
 }
 
+describe("ascii cycle", () => {
+  it("flickers at the default amount with the standard charset", () => {
+    const ascii = effects.find((e) => e.id === "ascii")!;
+    const c = { source: picture(), effects: layer(ascii, { charset: "standard" }), loopSeconds: 8 };
+    const a = renderFrame({ ...c, timeMs: 0 }, 480, 270);
+    const b = renderFrame({ ...c, timeMs: 4000 }, 480, 270);
+    expect(framesEqual(a, b)).toBe(false);
+  });
+
+  it("cycleAmount 0 holds still even with cycle on", () => {
+    const ascii = effects.find((e) => e.id === "ascii")!;
+    const c = { source: picture(), effects: layer(ascii, { charset: "standard", cycleAmount: 0 }), loopSeconds: 8 };
+    expect(framesEqual(renderFrame({ ...c, timeMs: 0 }, 480, 270), renderFrame({ ...c, timeMs: 4000 }, 480, 270))).toBe(true);
+  });
+});
+
 describe("stack", () => {
   const pixelate = effects.find((e) => e.id === "pixelate")!;
 
@@ -178,7 +192,7 @@ describe("stack", () => {
     // Size 20 divides 1920 and 1080 into an even number of cells, so the
     // centred grid starts exactly at the frame's corner.
     for (const [w, h, px] of [[1920, 1080, 20], [3840, 2160, 40]] as const) {
-      const f = renderFrame({ source: picture(), effects: layer(pixelate, { size: 20 }) }, w, h);
+      const f = renderFrame({ source: picture(), effects: layer(pixelate, { size: 20, gap: 0 }) }, w, h);
       // Every pixel of a cell equals the cell's first pixel. Checked on a
       // band of cells through the middle of the frame.
       for (let cy = 20; cy < 24; cy++) {
