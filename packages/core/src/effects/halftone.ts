@@ -87,6 +87,7 @@ vec4 lattice(vec2 k) {
 vec3 shade(vec2 g, float aa, vec3 b) {
   bool hex = u_grid > 0.5;
   bool line = u_shape > 0.5 && u_shape < 1.5;
+  // Texel units -> lattice units (1 = the pitch the user set as Size).
   vec2 unit = hex ? vec2(0.5, ROW) : vec2(1.0);
   float stride = hex ? 2.0 : 1.0;
   float j0 = floor(g.y);
@@ -95,10 +96,14 @@ vec3 shade(vec2 g, float aa, vec3 b) {
 
   for (int dj = -1; dj <= 1; dj++) {
     float j = j0 + float(dj);
+    // Hex: lattice points sit where column + row is even.
     float par = hex ? mod(j, 2.0) : 0.0;
     float dy = (g.y - (j + 0.5)) * unit.y;
 
     if (line) {
+      // Lines run along the lattice rows. Their width is interpolated between
+      // the two lattice points that bracket this pixel, so it varies smoothly
+      // instead of stepping once per cell.
       float kl = stride * floor((g.x - 0.5 - par) / stride) + par;
       float f = (g.x - 0.5 - kl) / stride;
       vec4 v = mix(lattice(vec2(kl, j)), lattice(vec2(kl + stride, j)), f);
@@ -117,6 +122,7 @@ vec3 shade(vec2 g, float aa, vec3 b) {
       float dist;
       float extent;
       if (u_shape < 0.5) {
+        // Dot: area pi * rho^2 out of a cell of area 1 (square) or ROW (hex).
         dist = length(d);
         extent = sqrt(v.a * (hex ? ROW : 1.0) / 3.14159265);
       } else {
@@ -124,6 +130,9 @@ vec3 shade(vec2 g, float aa, vec3 b) {
         extent = 0.5 * sqrt(v.a);
       }
       extent = min(extent * u_radius, 1.0);
+
+      // Coverage of a straight edge by a box is linear in the distance to
+      // it. Softness widens that ramp into a blur.
       float ramp = aa + u_softness * extent;
       float mask = extent <= 0.0 ? 0.0 : clamp((extent - dist) / ramp + 0.5, 0.0, 1.0);
       if (mask > bestMask) { bestMask = mask; bestInk = v.rgb; }

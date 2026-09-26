@@ -25,7 +25,7 @@
 // blend: normal, opacity: 1 is the classic full-frame dither.
 
 import type { EffectDef } from "../types";
-import { BLEND, COLOR_MODE, COMPOSITE, FILTER_COMPOSITE, blendParams, colorModeParams } from "./chunks";
+import { BLEND, COLOR_MODE, COMPOSITE, FILTER_COMPOSITE, blendParams, colorModeParams, filterPicture } from "./chunks";
 import { BLUE_NOISE_SIZE, blueNoiseBytes } from "./blueNoise";
 
 const CELL_FRAGMENT = `
@@ -118,7 +118,7 @@ export const dither: EffectDef = {
   grid: {
     cell: (p) => [p.size as number, p.size as number],
     fragment: CELL_FRAGMENT,
-    picture: true,
+    picture: filterPicture,
   },
   textures: [
     {
@@ -163,7 +163,7 @@ export const dither: EffectDef = {
     const patterns = ["bayer2", "bayer4", "bayer8", "blueNoise"];
     const modes = ["source", "duotone", "palette"];
     const blends = ["normal", "screen", "overlay", "softLight"];
-    return {
+    const p = {
       pattern: patterns[Math.floor(rand() * patterns.length)],
       size: Math.round(2 + rand() * 6),
       levels: Math.round(2 + rand() * 3),
@@ -177,5 +177,13 @@ export const dither: EffectDef = {
       blend: blends[Math.floor(rand() * blends.length)],
       opacity: 0.6 + rand() * 0.4,
     };
+    // Screened duotone needs black ink and white paper: black cells leave
+    // the picture alone and white ones show as marks. The near-white paper
+    // would lift the whole frame instead.
+    if (p.blend === "screen" || p.blend === "colorDodge") {
+      p.ink = "#000000";
+      p.paper = "#ffffff";
+    }
+    return p;
   },
 };

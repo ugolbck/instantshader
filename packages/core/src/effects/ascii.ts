@@ -68,10 +68,10 @@ void main() {
   // which is what a pure distance scale did on a 10-glyph set. Blank cells
   // stay blank, or dark areas would fill with sparks.
   if (u_cycle > 0.0 && glyph > 0.5) {
-    float step = loopStep(u_cycle);
-    float pick = hash12(cellIndex() + vec2(11.0, 53.0) * step + u_seed + 3.1);
+    float st = loopStep(u_cycle);
+    float pick = hash12(cellIndex() + vec2(11.0, 53.0) * st + u_seed + 3.1);
     if (pick < u_cycleAmount) {
-      float h = hash12(cellIndex() + vec2(37.0, 17.0) * step + u_seed);
+      float h = hash12(cellIndex() + vec2(37.0, 17.0) * st + u_seed);
       float reach = max(1.0, floor(u_cycleAmount * u_glyphCount * 0.25));
       float move = (h < 0.5 ? -1.0 : 1.0) * (1.0 + floor(fract(h * 2.0) * reach));
       glyph = clamp(glyph + move, 1.0, u_glyphCount - 1.0);
