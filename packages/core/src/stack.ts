@@ -412,9 +412,10 @@ export function createStackRenderer(opts: StackOptions): StackRenderer {
 
   /**
    * `input` blurred by `blurRef` reference px. Done at 1/k resolution with
-   * k chosen so sigma is 2..4 small texels: the cost is the same at every
-   * output size, and the small target is ~2 * ref / blur texels whatever
-   * the output scale, so preview and export blur alike.
+   * k chosen so sigma is at most 4 small texels (below 2 only when blurPx
+   * < 2, where k floors to 1): the cost is the same at every output size,
+   * and the small target is ~2 * ref / blur texels whatever the output
+   * scale, so preview and export blur alike.
    */
   function blurred(input: Target, blurRef: number): Target {
     const blurPx = blurRef * outputScale(canvas.width, canvas.height);

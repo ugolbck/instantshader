@@ -332,11 +332,14 @@ describe("backdrop blur", () => {
   });
 
   it("blurs the backdrop", () => {
-    // The test picture's disc, block and stripes have hard edges; a 40 ref
-    // px blur (about 7 px here) moves edge pixels by far more than 20.
-    const plain = renderFrame({ source: picture() }, 320, 180);
+    // Against blur: 0, not the plain picture: halftone's own supersampled
+    // backdrop already differs from the plain picture at hard edges (see
+    // above), which would let this pass even with blur ignored. The test
+    // picture's disc, block and stripes have hard edges; a 40 ref px blur
+    // (about 7 px here) moves edge pixels by far more than 20.
+    const unblurred = renderFrame({ source: picture(), effects: bare({ blur: 0 }) }, 320, 180);
     const fx = renderFrame({ source: picture(), effects: bare({ blur: 40 }) }, 320, 180);
-    expect(diffStats(plain, fx).p99).toBeGreaterThan(20);
+    expect(diffStats(unblurred, fx).p99).toBeGreaterThan(20);
   });
 
   it("is ignored on a paper ground", () => {
