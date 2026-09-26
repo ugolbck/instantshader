@@ -18,7 +18,12 @@ import {
 // no motion of its own.
 const MOTION: Record<string, Record<string, ParamValue>> = {
   dither: { shimmer: 8 },
-  halftone: { pulse: 1 },
+  // motionSpeed 0.5 (the default) times an 8s loop snaps to exactly 4 whole
+  // cycles, so the "moves on its own" check (0s vs half of an 8s loop) lands
+  // on an even number of cycles and sees no movement by construction. 0.6
+  // snaps to 5 (odd), so half the loop is an odd number of half-cycles and
+  // the frame actually differs.
+  halftone: { motion: "wave", motionAmount: 1, motionSpeed: 0.6 },
   ascii: { cycle: 8 },
 };
 
