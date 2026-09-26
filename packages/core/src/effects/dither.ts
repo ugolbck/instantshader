@@ -18,9 +18,14 @@
 // Not here, on purpose: error diffusion (Floyd-Steinberg, Atkinson). Each
 // pixel depends on its neighbours' rounding error, which a fragment shader
 // cannot express. Blue noise is the parallel pattern that looks closest.
+//
+// By default the dither is white marks screened over the picture: the
+// duotone runs black to white, and screen leaves the picture untouched under
+// black cells, so only the lit cells show, and more of them in the lights.
+// blend: normal, opacity: 1 is the classic full-frame dither.
 
 import type { EffectDef } from "../types";
-import { COLOR_MODE, colorModeParams } from "./chunks";
+import { BLEND, COLOR_MODE, COMPOSITE, FILTER_COMPOSITE, blendParams, colorModeParams } from "./chunks";
 import { BLUE_NOISE_SIZE, blueNoiseBytes } from "./blueNoise";
 
 const CELL_FRAGMENT = `
@@ -96,12 +101,24 @@ void main() {
 }
 `;
 
+/** Coverage upscale, then over the picture (FILTER_COMPOSITE). */
+const DRAW_FRAGMENT = `
+${BLEND}
+${COMPOSITE}
+${FILTER_COMPOSITE}
+void main() {
+  gl_FragColor = vec4(overPicture(coverage()), 1.0);
+}
+`;
+
 export const dither: EffectDef = {
   id: "dither",
   label: "Dither",
+  fragment: DRAW_FRAGMENT,
   grid: {
     cell: (p) => [p.size as number, p.size as number],
     fragment: CELL_FRAGMENT,
+    picture: true,
   },
   textures: [
     {
@@ -139,11 +156,13 @@ export const dither: EffectDef = {
     // Pattern jumps per second. 0 = static. Capped at 12: noise that changes
     // every frame at 4K roughly doubles the bitrate a video encoder needs.
     { key: "shimmer", label: "Shimmer", min: 0, max: 12, step: 1, default: 0 },
-    ...colorModeParams({ mode: "source" }),
+    ...colorModeParams({ mode: "duotone", ink: "#000000", paper: "#ffffff" }),
+    ...blendParams({ blend: "screen", opacity: 0.6 }),
   ],
   randomParams(rand) {
     const patterns = ["bayer2", "bayer4", "bayer8", "blueNoise"];
     const modes = ["source", "duotone", "palette"];
+    const blends = ["normal", "screen", "overlay", "softLight"];
     return {
       pattern: patterns[Math.floor(rand() * patterns.length)],
       size: Math.round(2 + rand() * 6),
@@ -155,6 +174,8 @@ export const dither: EffectDef = {
       ink: "#111111",
       paper: "#f4f1ea",
       invert: false,
+      blend: blends[Math.floor(rand() * blends.length)],
+      opacity: 0.6 + rand() * 0.4,
     };
   },
 };

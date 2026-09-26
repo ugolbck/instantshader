@@ -27,6 +27,13 @@ const MOTION: Record<string, Record<string, ParamValue>> = {
   ascii: { cycle: 8, motion: "twinkle", motionAmount: 1, motionSpeed: 0.6 },
 };
 
+// The classic full-frame output, for the cell-exactness test: the filters'
+// default blends mix in the picture, which is not a per-cell value.
+const FIDELITY: Record<string, Record<string, ParamValue>> = {
+  dither: { blend: "normal", opacity: 1, colorMode: "source" },
+  pixelate: { blend: "normal", opacity: 1 },
+};
+
 // Params that switch an effect's DEFAULT motion off, for the still test.
 const STILL: Record<string, Record<string, ParamValue>> = { ascii: { cycle: 0 } };
 
@@ -78,9 +85,10 @@ for (const def of effects) {
           it("has identical cells at 1080p and at 4K", () => {
             // With whole pixels per cell, sampling each cell's centre reads
             // the cell buffer back through the draw stage.
-            expect(wholeCells(def, motion, 1920, 1080)).toBe(true);
-            const g = gridFor(1920, 1080, def.grid!.cell(resolveEffectParams(def, motion)));
-            const c = { source: make(), effects: layer(def, motion), timeMs: 2500 };
+            const fp = { ...FIDELITY[def.id], ...motion };
+            expect(wholeCells(def, fp, 1920, 1080)).toBe(true);
+            const g = gridFor(1920, 1080, def.grid!.cell(resolveEffectParams(def, fp)));
+            const c = { source: make(), effects: layer(def, fp), timeMs: 2500 };
             const a = sampleCells(renderFrame(c, 1920, 1080), g.pxPerCell[0]);
             const b = sampleCells(renderFrame(c, 3840, 2160), g.pxPerCell[0] * 2);
             expect(a.length).toBe(b.length);
@@ -246,7 +254,7 @@ function flat(hex: string): Source {
 }
 
 describe("dither", () => {
-  const duotone = { colorMode: "duotone", ink: "#000000", paper: "#ffffff" };
+  const duotone = { colorMode: "duotone", ink: "#000000", paper: "#ffffff", blend: "normal", opacity: 1 };
 
   for (const pattern of ["bayer2", "bayer4", "bayer8", "blueNoise"]) {
     it(`${pattern}: pure black and pure white stay pure`, () => {
@@ -281,7 +289,7 @@ describe("dither", () => {
   it("palette mode over a generator outputs only palette stops", () => {
     const colors = ["#e84393", "#0984e3", "#fdcb6e"];
     const f = renderFrame(
-      { source: generator, colors, effects: layer(dither, { colorMode: "palette", levels: 3, pattern: "blueNoise" }) },
+      { source: generator, colors, effects: layer(dither, { colorMode: "palette", levels: 3, pattern: "blueNoise", blend: "normal", opacity: 1 }) },
       1920, 1080,
     );
     const seen = new Set<string>();
@@ -399,6 +407,17 @@ describe("blend math", () => {
           expect(Math.abs(px.data[0] - f(bq, sq) * 255)).toBeLessThanOrEqual(1.5);
         }
       }
+    });
+  }
+});
+
+describe("filters over the picture", () => {
+  for (const id of ["dither", "pixelate"]) {
+    it(`${id}: opacity 0 shows the picture`, () => {
+      const def = effects.find((e) => e.id === id)!;
+      const plain = renderFrame({ source: picture() }, 320, 180);
+      const fx = renderFrame({ source: picture(), effects: layer(def, { blend: "normal", opacity: 0 }) }, 320, 180);
+      expect(diffStats(plain, fx).max).toBeLessThanOrEqual(1);
     });
   }
 });

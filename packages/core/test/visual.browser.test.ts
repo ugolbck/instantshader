@@ -97,6 +97,7 @@ describe.skipIf(!ENABLED)("visual sheets", () => {
     await sheet("pixelate-bloom-7-gap", gen, [{ effect: pixelate, params: { size: 7, gap: 0.15, levels: 5 } }]);
     await sheet("pixelate-photo-16", media, [{ effect: pixelate, params: { size: 16 } }]);
     await sheet("pixelate-flow-3", { kind: "generator", shader: flow }, [{ effect: pixelate, params: { size: 3 } }]);
+    await sheet("pixelate-photo-softlight", media, [{ effect: pixelate, params: { blend: "softLight", opacity: 0.8, gap: 0.1 } }]);
   }, 600_000);
 
   it("dither", async () => {
@@ -111,6 +112,9 @@ describe.skipIf(!ENABLED)("visual sheets", () => {
     await sheet("dither-photo-blue-duotone", media, d({ size: 3, pattern: "blueNoise", colorMode: "duotone" }));
     await sheet("dither-photo-bayer4-source3", media, d({ size: 4, levels: 3 }));
     await sheet("dither-photo-fine-size2", media, d({ size: 2, pattern: "bayer4", colorMode: "duotone" }));
+    await sheet("dither-photo-default", media, d({}));
+    await sheet("dither-bloom-default", gen, d({}));
+    await sheet("dither-photo-overlay-palette", media, d({ colorMode: "palette", blend: "overlay", levels: 4 }));
   }, 600_000);
 
   it("halftone", async () => {

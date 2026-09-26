@@ -10,6 +10,7 @@
 // 1920x1080 export, 48px cells at 4K, and the same 80x45 cells in both.
 
 import type { EffectDef } from "../types";
+import { BLEND, COMPOSITE, FILTER_COMPOSITE, blendParams } from "./chunks";
 
 const CELL_FRAGMENT = `
 uniform float u_levels;
@@ -29,6 +30,9 @@ void main() {
 const DRAW_FRAGMENT = `
 uniform float u_gap;
 uniform vec3 u_gapColor;
+${BLEND}
+${COMPOSITE}
+${FILTER_COMPOSITE}
 
 void main() {
   vec3 color = coverage();
@@ -45,7 +49,7 @@ void main() {
     float m = 1.0 - (1.0 - cov.x) * (1.0 - cov.y);
     color = toSrgb(mix(toLinear(color), toLinear(u_gapColor), m));
   }
-  gl_FragColor = vec4(color, 1.0);
+  gl_FragColor = vec4(overPicture(color), 1.0);
 }
 `;
 
@@ -56,6 +60,7 @@ export const pixelate: EffectDef = {
   grid: {
     cell: (p) => [p.size as number, p.size as number],
     fragment: CELL_FRAGMENT,
+    picture: true,
   },
   params: [
     { key: "size", label: "Size", min: 2, max: 160, step: 1, default: 24 },
@@ -64,6 +69,7 @@ export const pixelate: EffectDef = {
     // Grid lines, as a fraction of the cell. Gives the LED-wall / mosaic look.
     { key: "gap", label: "Gap", min: 0, max: 0.4, step: 0.01, default: 0 },
     { key: "gapColor", label: "Gap color", type: "color", default: "#000000" },
+    ...blendParams({ blend: "normal", opacity: 1 }),
   ],
   randomParams(rand) {
     return {
@@ -71,6 +77,8 @@ export const pixelate: EffectDef = {
       levels: rand() < 0.5 ? 0 : Math.round(3 + rand() * 5),
       gap: rand() < 0.6 ? 0 : 0.05 + rand() * 0.15,
       gapColor: "#000000",
+      blend: "normal",
+      opacity: 1,
     };
   },
 };
