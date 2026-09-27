@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import Studio from "./Studio";
+import "./styles.css";
 
 // No StrictMode: its dev-only double-invoke of effects would mount and
 // dispose the WebGL context twice on every render pass, which is noisy to

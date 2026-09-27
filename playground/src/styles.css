@@ -1,0 +1,930 @@
+/* Studio chrome. The canvas owns the colour; the chrome is neutral glass so
+   it never argues with a palette, and the one place colour enters the UI is
+   the live palette ramp (--ramp, set by Studio) painted into every slider,
+   the colours tab and the stop editor. */
+
+:root {
+  --glass: rgba(19, 19, 25, 0.76);
+  --glass-strong: rgba(26, 26, 33, 0.94);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.24);
+  --text: #eeedf2;
+  --muted: #a09eaa;
+  --faint: #6b6975;
+  --warn: #ffc27a;
+  --danger: #ff9b9b;
+  --focus: #ffffff;
+  --r-panel: 16px;
+  --r-control: 8px;
+  --r-chip: 5px;
+  --font: "Recursive", ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--text);
+  font-variation-settings: "CASL" 0.35, "MONO" 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.studio {
+  position: fixed;
+  inset: 0;
+}
+
+/* ---- canvas ------------------------------------------------------------ */
+
+.stage {
+  position: fixed;
+  inset: 0;
+}
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.stage.export {
+  /* The 4K export over the right half of the live preview. */
+  clip-path: inset(0 0 0 50%);
+  pointer-events: none;
+}
+.compare-labels {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 50%;
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.compare-labels span {
+  padding: 3px 10px;
+  background: var(--glass-strong);
+  font-size: 11px;
+  color: var(--muted);
+}
+.compare-labels span:first-child {
+  border-radius: 99px 0 0 99px;
+}
+.compare-labels span:last-child {
+  border-radius: 0 99px 99px 0;
+}
+
+.dropzone {
+  position: fixed;
+  inset: 16px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--r-panel);
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 18px;
+  font-variation-settings: "CASL" 1;
+  pointer-events: none;
+}
+
+/* ---- panel ------------------------------------------------------------- */
+
+.panel {
+  position: fixed;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  bottom: 86px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+.tabs button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  padding: 11px 12px 10px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+.tabs button small {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tabs button[aria-selected="true"] {
+  color: var(--text);
+}
+.tabs button[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ramp);
+}
+.tabs button:hover {
+  color: var(--text);
+}
+.tab-ramp {
+  display: block;
+  height: 8px;
+  margin-top: 3px;
+  border-radius: 99px;
+  background: var(--ramp);
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+/* ---- generic controls -------------------------------------------------- */
+
+button,
+select,
+input[type="text"] {
+  font: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 6px 10px;
+  min-width: 0;
+}
+button {
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--line-strong);
+}
+button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+button.primary {
+  background: var(--text);
+  color: #141419;
+  border-color: transparent;
+  font-weight: 600;
+}
+button.primary:hover:not(:disabled) {
+  background: #fff;
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+select {
+  width: 100%;
+  cursor: pointer;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+.row > * {
+  flex: 1;
+}
+.row.tight > * {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.icon {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+}
+.icon:hover:not(:disabled) {
+  color: var(--text);
+}
+.icon.danger:hover:not(:disabled) {
+  color: var(--danger);
+  background: rgba(255, 120, 120, 0.1);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.field-head label,
+.field-head .label {
+  flex: 1;
+}
+.field-head label.changed {
+  color: var(--text);
+}
+.field-head output {
+  font-variation-settings: "MONO" 1, "CASL" 0;
+  font-size: 12px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.reset-one {
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  font-size: 12px;
+}
+.reset-one:hover:not(:disabled) {
+  background: transparent;
+  color: var(--text);
+}
+
+/* The palette ramp is the track; the part past the thumb is dimmed so the
+   value still reads as a fill. */
+.range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent var(--pct), rgba(12, 12, 16, 0.82) var(--pct)), var(--ramp);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.range::-moz-range-track {
+  height: 6px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, transparent var(--pct), rgba(12, 12, 16, 0.82) var(--pct)), var(--ramp);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(12, 12, 16, 0.7), 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(12, 12, 16, 0.7);
+}
+.range:focus-visible {
+  outline: none;
+}
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px rgba(12, 12, 16, 0.9);
+}
+
+.segmented {
+  display: flex;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--r-control);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--line);
+}
+.segmented button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.segmented button.on {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  color: var(--muted);
+  text-align: left;
+}
+.toggle:hover:not(:disabled) {
+  background: transparent;
+  color: var(--text);
+}
+.toggle-track {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  flex: 0 0 auto;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background 0.15s;
+}
+.toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.toggle[aria-checked="true"] {
+  color: var(--text);
+}
+.toggle[aria-checked="true"] .toggle-track {
+  background: var(--ramp);
+}
+.toggle[aria-checked="true"] .toggle-track::after {
+  transform: translateX(12px);
+}
+
+.color-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+.color-field label {
+  flex: 1;
+}
+.color-field code {
+  font-family: inherit;
+  font-variation-settings: "MONO" 1, "CASL" 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.chip {
+  position: relative;
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-chip);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.chip.big {
+  width: 30px;
+  height: 30px;
+}
+.chip input[type="color"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.note.warn {
+  color: var(--warn);
+}
+
+/* ---- groups ------------------------------------------------------------ */
+
+.group > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.group-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  text-align: left;
+}
+.group-title:hover:not(:disabled) {
+  background: transparent;
+}
+.caret {
+  width: 0;
+  height: 0;
+  border-left: 4px solid var(--faint);
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+  transition: transform 0.15s;
+}
+[aria-expanded="true"] > .caret {
+  transform: rotate(90deg);
+}
+.group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0 2px;
+}
+.group + .group {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+/* ---- look picker ------------------------------------------------------- */
+
+.looks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.look {
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05) center / cover no-repeat;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  position: relative;
+}
+.look span {
+  width: 100%;
+  padding: 10px 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.look:hover:not(:disabled) {
+  border-color: var(--line-strong);
+}
+.look.on {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px #fff;
+}
+.look.image {
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 6px, transparent 6px 12px);
+  border-style: dashed;
+}
+
+/* ---- palette ----------------------------------------------------------- */
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ramp-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ramp {
+  height: 56px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.stops {
+  display: flex;
+  gap: 4px;
+  margin-top: -4px;
+}
+.stops .stop {
+  flex: 1;
+  height: 22px;
+  padding: 0;
+  border-radius: var(--r-chip);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+.stops .stop.on {
+  box-shadow: 0 0 0 2px #fff;
+}
+.stop-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stop-edit .hex {
+  flex: 1;
+  font-variation-settings: "MONO" 1, "CASL" 0;
+}
+.paste {
+  width: 100%;
+}
+.paste::placeholder {
+  color: var(--faint);
+}
+.paste.invalid {
+  border-color: rgba(255, 140, 140, 0.6);
+}
+
+.preset-group h3 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.preset {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border-color: transparent;
+}
+.preset:hover:not(:disabled) {
+  color: var(--text);
+}
+.preset.on {
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+.swatch-bar {
+  display: block;
+  height: 22px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+/* ---- effect stack ------------------------------------------------------ */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.empty {
+  margin: 0;
+  color: var(--muted);
+  font-variation-settings: "CASL" 0.8;
+}
+/* Rendered bottom layer first in the data, shown top layer first so the
+   list reads like the stack it is: what is on top is at the top. */
+.layers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+.layer {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.layer.open {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-strong);
+}
+.layer.off .layer-name {
+  color: var(--faint);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+}
+.layer-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 4px 4px 0;
+}
+.layer-name {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  font-weight: 600;
+  text-align: left;
+  min-width: 0;
+}
+.layer-name:hover:not(:disabled) {
+  background: transparent;
+}
+.layer-name .caret {
+  align-self: center;
+}
+.layer-name small {
+  font-weight: 400;
+  color: var(--faint);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.layer-tools {
+  display: flex;
+}
+.layer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 12px 12px;
+}
+
+.add .label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.add-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.add-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.add-grid button small {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+/* ---- shortcuts --------------------------------------------------------- */
+
+.shortcuts {
+  border-top: 1px solid var(--line);
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--faint);
+}
+.shortcuts summary {
+  cursor: pointer;
+}
+.shortcuts dl {
+  margin: 8px 0 2px;
+  display: grid;
+  gap: 5px;
+}
+.shortcuts dl div {
+  display: flex;
+  gap: 10px;
+}
+.shortcuts dt {
+  width: 54px;
+}
+.shortcuts dd {
+  margin: 0;
+  color: var(--muted);
+}
+kbd {
+  font-family: inherit;
+  font-variation-settings: "MONO" 1;
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+}
+
+/* ---- transport --------------------------------------------------------- */
+
+.transport {
+  position: fixed;
+  z-index: 2;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+}
+.play {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  padding: 0;
+  border-radius: 11px;
+  font-size: 14px;
+  background: var(--ramp);
+  border: 0;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.play:hover:not(:disabled) {
+  background: var(--ramp);
+  filter: brightness(1.12);
+}
+.transport-field {
+  width: 150px;
+  flex: 0 0 auto;
+}
+.transport-field.seed {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 172px;
+}
+.transport-field.seed .field {
+  flex: 1;
+}
+.transport-field.loop {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.transport-field.loop .field {
+  width: 190px;
+}
+.transport-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.transport-actions button {
+  white-space: nowrap;
+}
+.transport-actions button.on {
+  background: var(--text);
+  color: #141419;
+}
+
+.unhide {
+  position: fixed;
+  z-index: 2;
+  right: 14px;
+  bottom: 14px;
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  opacity: 0.4;
+}
+.unhide:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.toast {
+  position: fixed;
+  z-index: 3;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  border-radius: 99px;
+  background: var(--glass-strong);
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.toast:not(:empty) {
+  opacity: 1;
+}
+
+/* ---- narrow screens ---------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .transport {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+  .transport-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .transport-actions button {
+    flex: 1;
+  }
+  .panel {
+    bottom: 150px;
+  }
+}
+
+@media (max-width: 640px) {
+  .panel {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    height: 52vh;
+  }
+  .transport {
+    top: 8px;
+    bottom: auto;
+    left: 8px;
+    right: 8px;
+  }
+  .transport-field,
+  .transport-field.seed,
+  .transport-field.loop .field {
+    width: calc(50% - 36px);
+  }
+  .transport-field.loop {
+    width: 100%;
+  }
+  .looks {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
