@@ -22,9 +22,9 @@ describe.skipIf(!ENABLED)("readme assets", () => {
   it("renders one image per effect", async () => {
     await save("pixelate", { kind: "generator", shader: flow }, [{ effect: pixelate, params: {} }],
       ["#4f46e5", "#ec4899", "#22d3ee"], 12, 3000);
-    await save("dither", { kind: "generator", shader: halo },
-      [{ effect: dither, params: {} }],
-      ["#140f30", "#3b1f6e", "#9c2168", "#eb6a4e"], 5, 2000);
+    await save("dither", { kind: "generator", shader: bloom },
+      [{ effect: dither, params: { size: 4, opacity: 1 } }],
+      ["#1a1446", "#5b2a9e", "#e0457b", "#ff9e5e", "#ffe3b3"], 3, 3000);
     await save("halftone", { kind: "generator", shader: bloom },
       [{ effect: halftone, params: { size: 26, radius: 1 } }],
       ["#1a1446", "#5b2a9e", "#e0457b", "#ff9e5e", "#ffe3b3"], 5, 2000);

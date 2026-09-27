@@ -385,16 +385,16 @@ Same rules as shader params: pass a subset, the rest keep their defaults. Sizes 
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
-| `pattern` | `bayer2`, `bayer4`, `bayer8`, `blueNoise` | `bayer4` | Threshold pattern |
-| `size` | 1 – 16 | 4 | Cell size |
-| `levels` | 2 – 8 | 2 | Output levels per channel, or along the tone scale |
+| `pattern` | `bayer2`, `bayer4`, `bayer8`, `blueNoise` | `bayer8` | Threshold pattern |
+| `size` | 1 – 16 | 3 | Cell size |
+| `levels` | 2 – 8 | 4 | Output levels per channel, or along the tone scale |
 | `bias` | -0.5 – 0.5 | 0 | Shifts every tone before quantizing |
-| `linear` | on/off | off | Threshold in linear light. Physically accurate, but dark gradients lose detail |
+| `linear` | on/off | on | Threshold in linear light. Physically accurate, but dark gradients lose detail |
 | `shimmer` | 0 – 12 | 0 | Pattern jumps per second. 0 is static |
-| `colorMode`, `ink`, `paper`, `invert` | | `duotone`, `#000000`, `#ffffff` | See above |
-| `blend`, `opacity` | | `screen`, 0.6 | See above |
+| `colorMode`, `ink`, `paper`, `invert` | | `source`, `#000000`, `#ffffff` | See above |
+| `blend`, `opacity` | | `softLight`, 0.6 | See above |
 
-By default the dither is white dots screened over the picture: black cells leave the picture as it is, white cells lighten it. For a full-frame dither in the picture's colours, use `{ colorMode: "source", blend: "normal", opacity: 1 }`.
+By default the picture's own colours, dithered to four levels, are soft-lit over the picture: the pattern adds texture while the picture stays readable. For a full-frame dither, use `{ blend: "normal", opacity: 1 }`. For white dots over the picture, use `{ colorMode: "duotone", blend: "screen" }`.
 
 Floyd-Steinberg and the other error-diffusion dithers are not included. They are sequential, so a fragment shader cannot run them. Blue noise is the pattern that looks closest.
 

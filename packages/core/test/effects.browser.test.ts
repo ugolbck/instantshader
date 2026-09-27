@@ -265,7 +265,9 @@ function flat(hex: string): Source {
 }
 
 describe("dither", () => {
-  const duotone = { colorMode: "duotone", ink: "#000000", paper: "#ffffff", blend: "normal", opacity: 1 };
+  // Two-level, gamma-space duotone: what these tests measure, pinned so
+  // they do not follow the shipped defaults.
+  const duotone = { colorMode: "duotone", ink: "#000000", paper: "#ffffff", blend: "normal", opacity: 1, levels: 2, linear: false };
 
   for (const pattern of ["bayer2", "bayer4", "bayer8", "blueNoise"]) {
     it(`${pattern}: pure black and pure white stay pure`, () => {
@@ -300,7 +302,7 @@ describe("dither", () => {
   it("palette mode over a generator outputs only palette stops", () => {
     const colors = ["#e84393", "#0984e3", "#fdcb6e"];
     const f = renderFrame(
-      { source: generator, colors, effects: layer(dither, { colorMode: "palette", levels: 3, pattern: "blueNoise", blend: "normal", opacity: 1 }) },
+      { source: generator, colors, effects: layer(dither, { colorMode: "palette", levels: 3, pattern: "blueNoise", blend: "normal", opacity: 1, size: 4 }) },
       1920, 1080,
     );
     const seen = new Set<string>();

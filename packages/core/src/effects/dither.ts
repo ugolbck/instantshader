@@ -19,9 +19,9 @@
 // pixel depends on its neighbours' rounding error, which a fragment shader
 // cannot express. Blue noise is the parallel pattern that looks closest.
 //
-// By default the dither is white marks screened over the picture: the
-// duotone runs black to white, and screen leaves the picture untouched under
-// black cells, so only the lit cells show, and more of them in the lights.
+// By default the picture's own colours, in four levels on an 8x8 Bayer
+// pattern thresholded in linear light, are soft-lit over the picture: the
+// pattern adds texture and contrast while the picture stays readable.
 // blend: normal, opacity: 1 is the classic full-frame dither.
 
 import type { EffectDef } from "../types";
@@ -142,22 +142,22 @@ export const dither: EffectDef = {
         { value: "bayer8", label: "Bayer 8x8" },
         { value: "blueNoise", label: "Blue noise" },
       ],
-      default: "bayer4",
+      default: "bayer8",
     },
     // Dither cell in reference pixels (px at 1080p). At 4K each cell is twice
     // that, always an even number of pixels, which keeps colored cells
     // aligned with the 2x2 chroma blocks of 4:2:0 video.
-    { key: "size", label: "Size", min: 1, max: 16, step: 1, default: 4 },
+    { key: "size", label: "Size", min: 1, max: 16, step: 1, default: 3 },
     // Output levels per channel (source) or along the tone scale. In palette
     // mode, levels = number of palette stops outputs exactly those colors.
-    { key: "levels", label: "Levels", min: 2, max: 8, step: 1, default: 2 },
+    { key: "levels", label: "Levels", min: 2, max: 8, step: 1, default: 4 },
     { key: "bias", label: "Bias", min: -0.5, max: 0.5, step: 0.01, default: 0 },
-    { key: "linear", label: "Linear light", type: "bool", default: false },
+    { key: "linear", label: "Linear light", type: "bool", default: true },
     // Pattern jumps per second. 0 = static. Capped at 12: noise that changes
     // every frame at 4K roughly doubles the bitrate a video encoder needs.
     { key: "shimmer", label: "Shimmer", min: 0, max: 12, step: 1, default: 0 },
-    ...colorModeParams({ mode: "duotone", ink: "#000000", paper: "#ffffff" }),
-    ...blendParams({ blend: "screen", opacity: 0.6 }),
+    ...colorModeParams({ mode: "source", ink: "#000000", paper: "#ffffff" }),
+    ...blendParams({ blend: "softLight", opacity: 0.6 }),
   ],
   randomParams(rand) {
     const patterns = ["bayer2", "bayer4", "bayer8", "blueNoise"];
