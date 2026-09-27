@@ -199,7 +199,7 @@ export const ascii: EffectDef = {
     // A little contrast thins the glyphs in the darks and fills them in the
     // lights, which is what keeps the picture readable under them.
     ...responseParams({ contrast: 1.2 }),
-    ...colorModeParams({ mode: "source", ink: "#e8ffe8", paper: "#000000", paperWhen: { key: "ground", in: ["paper"] } }),
+    ...colorModeParams({ mode: "source", ink: "#e8ffe8", paper: "#000000", paperWhen: { key: "ground", in: ["paper"] }, singleColour: true }),
   ],
   randomParams(rand) {
     const sets = ["standard", "dense", "blocks", "minimal", "binary"];

@@ -402,7 +402,7 @@ Floyd-Steinberg and the other error-diffusion dithers are not included. They are
 | `style`, `exposure`, `contrast`, `density` | | `filled`, 0, 1.15, 1 | See above |
 | `colorMode`, `ink`, `paper`, `invert` | | `source` | See above |
 
-For shapes on a sheet, as in print, use `{ ground: "paper", blend: "normal" }`.
+Over the picture, a shape's width follows how strongly its cell reacts: nothing in the cells that don't react, full size in the ones that react most. In `source` colours the shapes are a brightened version of the colour under them, so they stand out from it; for a colour of your own, use `colorMode: "duotone"` (shown as "Single colour") and `ink`. On paper, shape area follows tone, the print rule. For shapes on a sheet, as in print, use `{ ground: "paper", blend: "normal" }`.
 
 </details>
 

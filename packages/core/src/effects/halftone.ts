@@ -59,6 +59,13 @@ void main() {
   vec3 color = sc;
   if (u_colorMode > 1.5) color = paletteStop(toneIsRamp() ? rampPosition(sc) : luma(sc));
   else if (u_colorMode > 0.5) color = u_ink;
+  else if (u_ground < 0.5) {
+    // Over the picture, a shape in the picture's own colour blends into
+    // itself and vanishes. Lift it most of the way to full brightness, as
+    // ASCII does, so it reads as a vivid version of what is under it.
+    float peak = max(max(sc.r, sc.g), max(sc.b, 1e-3));
+    color = mix(sc, sc / peak, 0.75);
+  }
 
   gl_FragColor = vec4(color, ink);
 }
@@ -121,13 +128,19 @@ vec3 shade(vec2 g, float aa, vec3 b) {
       vec2 d = vec2((g.x - (k.x + 0.5)) * unit.x, dy);
       float dist;
       float extent;
+      // On paper, shape AREA follows ink: the print rule that reproduces
+      // tone. Over the picture there is no tone to reproduce, and area
+      // sizing squeezes the visible size range (half the ink is still 71%
+      // of the full width), so there the width follows strength directly:
+      // empty cells stay empty and full ones fill.
+      float grow = u_ground < 0.5 ? v.a : sqrt(v.a);
       if (u_shape < 0.5) {
         // Dot: area pi * rho^2 out of a cell of area 1 (square) or ROW (hex).
         dist = length(d);
-        extent = sqrt(v.a * (hex ? ROW : 1.0) / 3.14159265);
+        extent = grow * sqrt((hex ? ROW : 1.0) / 3.14159265);
       } else {
         dist = max(abs(d.x), abs(d.y));
-        extent = 0.5 * sqrt(v.a);
+        extent = 0.5 * grow;
       }
       extent = min(extent * u_radius, 1.0);
 
@@ -202,7 +215,7 @@ export const halftone: EffectDef = {
     { key: "radius", label: "Radius", min: 0.2, max: 1.5, step: 0.01, default: 0.75 },
     { key: "softness", label: "Softness", min: 0, max: 1, step: 0.01, default: 0.1 },
     ...responseParams({ contrast: 1.15 }),
-    ...colorModeParams({ mode: "source", paperWhen: { key: "ground", in: ["paper"] } }),
+    ...colorModeParams({ mode: "source", paperWhen: { key: "ground", in: ["paper"] }, singleColour: true }),
   ],
   randomParams(rand) {
     const shapes = ["dot", "dot", "line", "square"];

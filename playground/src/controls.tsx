@@ -158,7 +158,7 @@ export function ParamControl({
   onChange: (v: ParamValue) => void;
 }) {
   if (def.type === "enum") {
-    const short = def.options.length <= 3 && def.options.every((o) => o.label.length <= 9);
+    const short = def.options.length <= 3 && def.options.every((o) => o.label.length <= 13);
     return short ? (
       <Segmented label={def.label} options={def.options} value={value as string} onChange={onChange} />
     ) : (

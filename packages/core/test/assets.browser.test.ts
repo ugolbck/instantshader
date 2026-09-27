@@ -25,9 +25,9 @@ describe.skipIf(!ENABLED)("readme assets", () => {
     await save("dither", { kind: "generator", shader: halo },
       [{ effect: dither, params: {} }],
       ["#140f30", "#3b1f6e", "#9c2168", "#eb6a4e"], 5, 2000);
-    await save("halftone", { kind: "generator", shader: halo },
-      [{ effect: halftone, params: {} }],
-      ["#081A3D", "#123A73", "#1E63AC", "#4C9EDB", "#AEDAF7"], 5, 2000);
+    await save("halftone", { kind: "generator", shader: bloom },
+      [{ effect: halftone, params: { size: 26, radius: 1 } }],
+      ["#1a1446", "#5b2a9e", "#e0457b", "#ff9e5e", "#ffe3b3"], 5, 2000);
     // Showcase sizes: at the default size 10 the glyphs read as texture at 960px.
     await save("ascii", { kind: "generator", shader: flow },
       [{ effect: ascii, params: { size: 30 } }],

@@ -239,6 +239,9 @@ export function colorModeParams(opts: {
   paper?: string;
   /** Show paper only while this holds (mark effects: a paper ground). */
   paperWhen?: { key: string; in: ParamValue[] };
+  /** Mark effects: "duotone" only colours the marks, so it is labelled
+   * as one colour. The stored value stays "duotone". */
+  singleColour?: boolean;
 }): EffectParamDef[] {
   return [
     {
@@ -247,14 +250,14 @@ export function colorModeParams(opts: {
       type: "enum",
       options: [
         { value: "source", label: "Source" },
-        { value: "duotone", label: "Duotone" },
+        { value: "duotone", label: opts.singleColour ? "Single colour" : "Duotone" },
         { value: "palette", label: "Palette" },
       ],
       default: opts.mode,
     },
     {
       key: "ink",
-      label: "Ink",
+      label: opts.singleColour ? "Colour" : "Ink",
       type: "color",
       default: opts.ink ?? "#111111",
       when: { key: "colorMode", in: ["duotone"] },
