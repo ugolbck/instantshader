@@ -1,6 +1,6 @@
 {
   "name": "instantshader",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Animated WebGL gradient shaders, plus dither, pixelate, halftone and ASCII effects. Zero dependencies.",
   "type": "module",
   "license": "MIT",
