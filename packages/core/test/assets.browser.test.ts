@@ -6,7 +6,7 @@
 
 import { describe, it } from "vitest";
 import { commands } from "vitest/browser";
-import { ascii, bloom, burst, dither, flow, glint, halftone, halo, nacre, pixelate, renderStackFrame, silk, tint } from "../src/index";
+import { ascii, bloom, burst, dither, flow, glint, halftone, nacre, pixelate, renderStackFrame, silk, tint } from "../src/index";
 import type { EffectLayer, Source } from "../src/index";
 
 const ENABLED = Boolean((import.meta as unknown as { env: Record<string, string> }).env.VITE_ASSETS);
