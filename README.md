@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://instantgradient.com/app">
-    <img src=".github/assets/banner.jpg" alt="InstantShader — animated WebGL gradient shaders, zero dependencies" width="100%" />
+    <img src=".github/assets/banner.jpg" alt="InstantShader: animated WebGL gradient shaders, zero dependencies" width="100%" />
   </a>
 </p>
 
@@ -15,13 +15,14 @@
 </p>
 
 <p align="center">
-  Drop-in animated gradient backgrounds, rendered on the GPU.<br />
-  Give a shader 2 to 8 colours, mount it in any element, done.
+  Animated gradient backgrounds, rendered on the GPU.<br />
+  Give a shader 2 to 8 colours and mount it in any element. Add dither, halftone or ASCII over it, or over your own image.
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
   <a href="#shaders">Shaders</a> ·
+  <a href="#effects">Effects</a> ·
   <a href="#api">API</a> ·
   <a href="#seamless-loops">Loops</a> ·
   <a href="#exporting-frames">Export</a> ·
@@ -30,7 +31,8 @@
 
 <br />
 
-- **Seven looks**, each tunable through a handful of plain numeric params.
+- **Eleven looks**, each tuned through a handful of numeric params.
+- **Five effects** that draw over a shader or an image: pixelate, dither, halftone, ASCII and tint. Stack as many as you like.
 - **Any palette.** Pass 2 to 8 hex colours. They are blended in OKLCh, so a ramp between two saturated colours stays saturated instead of going grey in the middle.
 - **Zero dependencies**, raw WebGL1, tree-shakeable: you only ship the shaders you import.
 - **Seamless loops** on request, exact to the pixel, for video export.
@@ -133,8 +135,8 @@ Pass any subset through `params`; whatever you leave out keeps its default. All 
 
 | Param | Range | Default | What it does |
 | --- | --- | --- | --- |
-| `scale` | 0.5 – 2 | 1 | How much the beam bends |
-| `width` | 0.04 – 0.6 | 0.14 | Beam thickness, from hairline to wall of light |
+| `scale` | 0.5 – 2 | 0.75 | How much the beam bends |
+| `width` | 0.04 – 0.6 | 0.4 | Beam thickness, from hairline to wall of light |
 | `glow` | 0 – 1 | 0.5 | How far light spills into the dark |
 | `angle` | 0 – 360 | 28 | Beam direction, in degrees |
 
@@ -208,7 +210,7 @@ The default is the horizon composition (big disc, mostly below the frame). For a
 | `twist` | -3 – 3 | 1.1 | Spiral tightness; the sign picks the winding direction, `0` is a straight fan |
 | `depth` | 0 – 1.5 | 0.8 | Strength of the crease at each blade edge |
 | `scale` | 0.3 – 3 | 1.2 | Distance over which the palette runs, centre to rim |
-| `wobble` | 0 – 1 | 0.4 | Organic bending; `0` is a perfect pinwheel |
+| `wobble` | 0 – 1 | 0 | Organic bending; `0` is a perfect pinwheel |
 | `x`, `y` | -1.5 – 1.5 | -0.55, -0.7 | Centre position. `0` is the middle, `±1` the frame edge, beyond is off-frame |
 
 </details>
@@ -325,7 +327,18 @@ mountStack(el, {
 });
 ```
 
-In React that is `<ShaderStack source={{ kind: "media", media: img }} colors={...} effects={...} />`. `effects` is a list, bottom layer first, so effects can stack.
+In React that is `<ShaderStack source={{ kind: "media", media: img }} colors={...} effects={...} />`.
+
+`effects` is a list, bottom layer first. Each effect works on everything below it, so you can stack them:
+
+```ts
+effects: [
+  { effect: halftone, params: { shape: "dot", size: 16 } },
+  { effect: tint, params: { mode: "palette", amount: 0.6 } },
+],
+```
+
+Set `enabled: false` on a layer to switch it off without removing it.
 
 ### How effects combine with the picture
 
@@ -402,7 +415,7 @@ Floyd-Steinberg and the other error-diffusion dithers are not included. They are
 | `style`, `exposure`, `contrast`, `density` | | `filled`, 0, 1.15, 1 | See above |
 | `colorMode`, `ink`, `paper`, `invert` | | `source` | See above |
 
-Over the picture, a shape's width follows how strongly its cell reacts: nothing in the cells that don't react, full size in the ones that react most. In `source` colours the shapes are a brightened version of the colour under them, so they stand out from it; for a colour of your own, use `colorMode: "duotone"` (shown as "Single colour") and `ink`. On paper, shape area follows tone, the print rule. For shapes on a sheet, as in print, use `{ ground: "paper", blend: "normal" }`.
+Over the picture, shapes run from nothing where the picture reacts least to full size where it reacts most. In `source` colours each shape is a brighter version of the colour under it. To pick the shape colour yourself, set `colorMode: "duotone"` and `ink`. For shapes on a sheet, as in print, use `{ ground: "paper", blend: "normal" }`; on paper, shape area follows tone.
 
 </details>
 
@@ -451,7 +464,7 @@ for (let f = 0; f < frames; f++) {
 }
 ```
 
-Effect motion follows the same loop rules as the shaders, so a looping stack repeats exactly.
+Dither's `shimmer` and ASCII's `cycle` follow the same loop rules as the shaders, so a looping stack repeats exactly.
 
 ## API
 
@@ -546,7 +559,7 @@ For video, use `createRenderer({ canvas, shader, colors, params, seed, loopSecon
 
 ## Browser support
 
-Anything with WebGL1, which is every current browser. If a context cannot be created, `mountGradient` throws, so wrap it in a `try` if you need a CSS fallback.
+Anything with WebGL1, which is every current browser. The test suite runs in Chromium and Firefox. If a context cannot be created, `mountGradient` throws, so wrap it in a `try` if you need a CSS fallback.
 
 ## Packages
 
@@ -554,7 +567,7 @@ Anything with WebGL1, which is every current browser. If a context cannot be cre
 | --- | --- |
 | [`instantshader`](packages/core) | Core engine and shaders. Zero dependencies |
 | [`@instantshader/react`](packages/react) | React components |
-| `playground` | Local playground with live controls (not published) |
+| `playground` | Local studio: pick a look and a palette, stack effects, compare against the 4K export, share a design by URL. Not published |
 
 ## Development
 
@@ -581,7 +594,7 @@ pnpm changeset
 
 Once `.github/workflows/release.yml` is active, merging to `main` opens a
 version PR; merging that PR publishes both packages from CI via npm trusted
-publishing (OIDC — no npm token is stored anywhere).
+publishing (OIDC, so no npm token is stored anywhere).
 
 Both packages were bootstrapped by hand at 0.1.0 (npm cannot create a package
 through trusted publishing), so that step is done. What remains to hand
@@ -609,7 +622,7 @@ uninstallable. Both set `publishConfig.access: public`, so no `--access` flag
 is needed.
 
 Expect a few minutes between a successful publish and the version becoming
-installable — npm scans every publish for malware before releasing it.
+installable: npm scans every publish for malware before releasing it.
 
 </details>
 

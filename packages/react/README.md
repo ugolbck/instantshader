@@ -2,11 +2,11 @@
 
 # @instantshader/react
 
-React bindings for [instantshader](https://www.npmjs.com/package/instantshader), a
-zero-dependency animated WebGL gradient engine. Drop a `<Flow>`, `<Beam>`, `<Bloom>`, `<Halo>`, `<Strata>`, `<Dune>` or
-`<Whorl>` component into any sized wrapper to mount a live, animated gradient, and
-add dither, pixelate, halftone, ASCII or tint effects over it or over your own image.
-Built by [InstantGradient](https://instantgradient.com/app).
+React components for [instantshader](https://www.npmjs.com/package/instantshader),
+animated WebGL gradients with zero dependencies. Put a shader component in any
+sized element, and add dither, pixelate, halftone, ASCII or tint effects over
+it or over your own image. Built by
+[InstantGradient](https://instantgradient.com/app).
 
 ## Install
 
@@ -31,16 +31,16 @@ export function Background() {
 
 ## Shaders
 
-One component per shader, each a thin wrapper over the same props:
+One component per shader, all with the same props:
 
 | Component | Look | Params |
 | --- | --- | --- |
-| `<Flow>` | Isotropic swirling currents with defined luminous edges and calm negative space. | `scale`, `curl`, `drift`, `openness`, `grain` |
-| `<Beam>` | One wide beam of soft light crossing a near-black frame, the palette walking its length. | `scale`, `width`, `glow`, `angle`, `grain` |
-| `<Bloom>` | A fan of huge soft petals radiating from the bottom edge, palette as concentric scalloped bands. | `scale`, `petals`, `pinch`, `bend`, `sway`, `colorflow`, `grain` |
-| `<Halo>` | An eclipse disc with a bright limb and flowing corona; `x` / `y` place it, and the default is a glowing horizon arc. | `radius`, `x`, `y`, `glow`, `crescent`, `flares`, `grain` |
+| `<Flow>` | Swirling fluid currents with bright edges and calm open space. | `scale`, `curl`, `drift`, `openness`, `grain` |
+| `<Beam>` | One wide beam of soft light across a near-black frame, the palette running along it. | `scale`, `width`, `glow`, `angle`, `grain` |
+| `<Bloom>` | A fan of huge soft petals rising from the bottom edge. | `scale`, `petals`, `pinch`, `bend`, `sway`, `colorflow`, `grain` |
+| `<Halo>` | An eclipse: a dark disc with a bright rim and a corona. `x` / `y` place it; the default is a glowing horizon. | `radius`, `x`, `y`, `glow`, `crescent`, `flares`, `grain` |
 | `<Strata>` | Stacked cut-paper layers with soft shadows. | `scale`, `layers`, `warp`, `ridges`, `stretch`, `depth`, `blend`, `angle`, `grain` |
-| `<Dune>` | Overlapping crests, crisp on top and airbrushed below. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
+| `<Dune>` | Overlapping crests, crisp on top and fading out below. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
 | `<Whorl>` | A spiral of curved blades, positionable with `x` / `y`. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
 | `<Silk>` | Satin folds with a highlight along the threads. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
 | `<Nacre>` | Glassy liquid folds whose colour shifts on every slope. | `scale`, `flow`, `crease`, `depth`, `iridescence`, `light`, `grain` |
@@ -67,7 +67,7 @@ here as `flow`, `beam`, `bloom`, `halo`, `strata`, `dune`, `whorl`, `silk`,
 ## Effects
 
 Every shader component takes an `effects` prop: a list of layers, bottom
-first, each an effect def with its params.
+first. Each layer works on everything below it, so effects stack.
 
 ```tsx
 import { Bloom, dither } from "@instantshader/react";
@@ -84,15 +84,23 @@ put effects over an image. Any `<img>`, `<canvas>` or `<video>` element works
 as `media`:
 
 ```tsx
-import { ShaderStack, halftone } from "@instantshader/react";
+import { ShaderStack, halftone, tint } from "@instantshader/react";
 
 <ShaderStack
   source={{ kind: "media", media: img, fit: "cover" }}
   colors={["#111111", "#f4f1ea"]}
-  effects={[{ effect: halftone, params: { size: 20, angle: 30 } }]}
+  effects={[
+    { effect: halftone, params: { shape: "dot", size: 16 } },
+    { effect: tint, params: { mode: "palette", amount: 0.6 } },
+  ]}
   style={{ width: "100%", height: "100%" }}
 />;
 ```
+
+Halftone and ASCII draw shapes or characters over the picture; set `ground:
+"paper"` to draw them on a flat colour instead. `blend` and `opacity` set how
+any effect mixes with what is below it. A layer with `enabled: false` is
+skipped.
 
 Changing `effects` or their params updates the canvas in place. A new
 `source`, `seed`, `background` or `fontFamily` remounts it. The five effect

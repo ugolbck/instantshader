@@ -297,14 +297,14 @@ export const beam: ShaderDef = {
   label: "Beam",
   fragment: FRAGMENT,
   params: [
-    { key: "scale", label: "Scale", min: 0.5, max: 2, step: 0.05, default: 1 },
+    { key: "scale", label: "Scale", min: 0.5, max: 2, step: 0.05, default: 0.75 },
     // Width is in iso-uv units where the frame's half-height is 0.5, so the
     // default core (plus halo) occupies roughly a third of the frame. The max
     // was originally 0.22 to protect the negative space, but the owner wants
     // the beam to be able to go MUCH wider -- at 0.6 the core spans more than
     // the frame's height and the look shifts from "streak" to "wall of
     // light", which is a legitimate epic setting, so the slider allows it.
-    { key: "width", label: "Width", min: 0.04, max: 0.6, step: 0.005, default: 0.14 },
+    { key: "width", label: "Width", min: 0.04, max: 0.6, step: 0.005, default: 0.4 },
     { key: "glow", label: "Glow", min: 0, max: 1, step: 0.01, default: 0.5 },
     { key: "angle", label: "Angle", min: 0, max: 360, step: 1, default: 28 },
     { key: "grain", label: "Grain", min: 0, max: 0.3, step: 0.01, default: 0.08 },

@@ -2,10 +2,10 @@
 
 # instantshader
 
-Animated WebGL gradient shaders with zero dependencies. Mount a live, resizable
-gradient into any DOM element, put dither, pixelate, halftone, ASCII or tint
-effects over it or over your own image, or render a single frame to a detached canvas
-for export pipelines. Built by [InstantGradient](https://instantgradient.com/app).
+Animated WebGL gradient shaders with zero dependencies. Mount a live gradient
+into any element, draw dither, pixelate, halftone, ASCII or tint effects over
+it or over your own image, or render single frames for export. Built by
+[InstantGradient](https://instantgradient.com/app).
 
 ## Install
 
@@ -33,17 +33,17 @@ tree-shake away.
 
 | Shader | Look | Params |
 | --- | --- | --- |
-| `flow` | Isotropic swirling currents. A curl-noise field advects the sample point before it hits fbm, so colour masses travel in continuous, fluid-like eddies with defined luminous edges and generous calm negative space. | `scale`, `curl`, `drift`, `openness`, `grain` |
-| `beam` | One wide beam of soft light crossing a near-black frame. The palette walks the beam's length, thin brighter filaments crawl inside it, and most of the frame is dark negative space. | `scale`, `width`, `glow`, `angle`, `grain` |
-| `bloom` | A fan of huge, ultra-soft petals radiating from the frame's bottom edge. One analytic rose-curve field, so the palette reads as concentric scalloped bands from a hot core out to a dark background, with thin dark creases between the petals. | `scale`, `petals`, `pinch`, `bend`, `sway`, `colorflow`, `grain` |
-| `halo` | An eclipse: one dark disc with a razor-bright limb and a corona of streamers flowing outward, the palette wrapped around the ring. `x` / `y` place the disc; the default sinks it below the frame for a glowing horizon arc. | `radius`, `x`, `y`, `glow`, `crescent`, `flares`, `grain` |
-| `strata` | Stacked cut-paper sheets, one per palette step, each casting a soft shadow on the one below. `ridges` and `stretch` reshape the relief itself, from round islands to branching spines to long agate bands. | `scale`, `layers`, `warp`, `ridges`, `stretch`, `depth`, `blend`, `angle`, `grain` |
-| `dune` | Overlapping crests rolling across the frame, back to front. Each has one crisp top edge and airbrushes away below it; neighbouring crests slide against each other. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
-| `whorl` | A logarithmic spiral of curved blades, each with one sharp leading edge and a soft fade behind it. `x` / `y` place the centre anywhere, including off-frame. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
-| `silk` | Satin folds lit from one side, with an anisotropic sheen that streaks along the threads. The palette is printed on the cloth; light only reveals the relief. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
-| `nacre` | Glassy liquid folds whose colour walks through the neighbouring palette stops on every slope, the way mother of pearl shifts with the viewing angle. Only ever shows the ramp's own colours. | `scale`, `flow`, `crease`, `depth`, `iridescence`, `light`, `grain` |
-| `burst` | Thin grainy rays out of one point, each ray its own stop, streaming outward in packets, from a dark tunnel to a white-hot star, straight or twisted into a pinwheel. | `rays`, `sharp`, `glow`, `twist`, `x`, `y`, `grain` |
-| `glint` | A shoal of small angular shards streaming along one curved current on dark, spinning and flashing, each edge fringed with colour. The only particle look. | `size`, `density`, `bend`, `angle`, `speed`, `grain` |
+| `flow` | Swirling fluid currents. Colour masses travel in soft eddies with bright edges and calm open space between them. | `scale`, `curl`, `drift`, `openness`, `grain` |
+| `beam` | One wide beam of soft light across a near-black frame. The palette runs along the beam, with thin brighter filaments inside it. | `scale`, `width`, `glow`, `angle`, `grain` |
+| `bloom` | A fan of huge soft petals rising from the bottom edge. The palette forms scalloped bands from a hot core out to a dark background, with thin creases between the petals. | `scale`, `petals`, `pinch`, `bend`, `sway`, `colorflow`, `grain` |
+| `halo` | An eclipse: a dark disc with a bright rim and a corona of streamers, the palette wrapped around the ring. `x` / `y` place the disc; the default sinks it below the frame for a glowing horizon. | `radius`, `x`, `y`, `glow`, `crescent`, `flares`, `grain` |
+| `strata` | Stacked cut-paper sheets, one per palette step, each casting a soft shadow on the one below. `ridges` and `stretch` turn round islands into spines or long bands. | `scale`, `layers`, `warp`, `ridges`, `stretch`, `depth`, `blend`, `angle`, `grain` |
+| `dune` | Overlapping crests rolling across the frame. Each has a crisp top edge and fades out below it. | `layers`, `swell`, `waves`, `fade`, `soft`, `angle`, `grain` |
+| `whorl` | A spiral of curved blades, each with a sharp leading edge and a soft fade behind it. `x` / `y` place the centre anywhere, including off-frame. | `blades`, `twist`, `depth`, `scale`, `wobble`, `x`, `y`, `grain` |
+| `silk` | Satin folds lit from one side, with a sheen that streaks along the threads. | `scale`, `folds`, `depth`, `warp`, `sheen`, `light`, `grain` |
+| `nacre` | Glassy liquid folds whose colour shifts to the neighbouring palette colours on every slope, like mother of pearl. | `scale`, `flow`, `crease`, `depth`, `iridescence`, `light`, `grain` |
+| `burst` | Thin grainy rays out of one point, from a dark tunnel to a white-hot star, straight or twisted into a pinwheel. | `rays`, `sharp`, `glow`, `twist`, `x`, `y`, `grain` |
+| `glint` | Small spinning shards streaming along a curved current on dark, each edge fringed with colour. | `size`, `density`, `bend`, `angle`, `speed`, `grain` |
 
 Previews of every look, with full param ranges, are in the
 [repository README](https://github.com/ugolbck/instantshader#readme).
@@ -71,11 +71,16 @@ the whole registry (importing either pulls every shader).
 
 An effect redraws a picture: a shader's output, or an image, canvas or video
 frame you supply. Five are included: `pixelate`, `dither`, `halftone`,
-`ascii` and `tint`. Halftone and ASCII draw marks over the picture: `ground`
-picks the picture or a flat paper sheet under them. Pixelate and dither
-replace the picture at `blend: "normal"` and `opacity: 1` (pixelate's
-default) and mix with it otherwise. `blend` and `opacity` set how the effect
-mixes with what is below (tint uses `amount` instead).
+`ascii` and `tint`.
+
+- Halftone and ASCII draw shapes or characters over the picture. `ground`
+  picks what is under them: the picture, or a flat `paper` colour.
+- `blend` (`normal`, `multiply`, `screen`, `overlay`, `softLight`,
+  `colorDodge`) and `opacity` set how an effect mixes with what is below.
+  Pixelate and dither at `blend: "normal"` and `opacity: 1` replace the
+  picture.
+- Tint recolours whatever is below it by brightness, in two colours or along
+  the palette.
 
 ```ts
 import { mountStack, bloom, dither } from "instantshader";
@@ -90,7 +95,16 @@ mountStack(el, {
 
 For an image, the source is `{ kind: "media", media: img }` with an optional
 `fit` of `"cover"` (default) or `"contain"`. `effects` is a list, bottom
-layer first. `mountStack` returns the `mountGradient` handle plus
+layer first, and each effect works on everything below it:
+
+```ts
+effects: [
+  { effect: halftone, params: { shape: "dot", size: 16 } },
+  { effect: tint, params: { mode: "palette", amount: 0.6 } },
+],
+```
+
+A layer with `enabled: false` is skipped. `mountStack` returns the `mountGradient` handle plus
 `setSource`, `setSourceParams`, `setEffects`, `setEffectParams(index, params)`,
 `refreshMedia()` and `getGridInfo()`. `renderStackFrame` renders one frame to
 a detached canvas and `createStackRenderer` is the seekable renderer for
@@ -148,7 +162,7 @@ Notes:
   translating in a straight line through a noise field that tiles, and it
   covers exactly one tile per cycle, so a short loop flows fast and a long
   one flows slowly. The hand-tuned drift rate corresponds to a period around
-  60–90s; below ~30s the currents move noticeably faster than the look was
+  60 to 90s; below ~30s the currents move noticeably faster than the look was
   designed for. Compensate with `speed` rather than by shortening the loop.
 - **`beam` freezes its width swell below ~29s.** Its natural cycle is ~57s and
   cannot be squeezed into a short loop without becoming a throb, so under that

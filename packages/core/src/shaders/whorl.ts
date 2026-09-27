@@ -114,7 +114,7 @@ export const whorl: ShaderDef = {
     // Radius over which the palette runs from first stop (core) to last.
     { key: "scale", label: "Scale", min: 0.3, max: 3, step: 0.05, default: 1.2 },
     // Organic per-blade bending: 0 = perfect vector pinwheel.
-    { key: "wobble", label: "Wobble", min: 0, max: 1, step: 0.01, default: 0.4 },
+    { key: "wobble", label: "Wobble", min: 0, max: 1, step: 0.01, default: 0 },
     // Centre position: 0 = middle, +-1 = frame edge, beyond = off-frame.
     { key: "x", label: "X", min: -1.5, max: 1.5, step: 0.01, default: -0.55 },
     { key: "y", label: "Y", min: -1.5, max: 1.5, step: 0.01, default: -0.7 },
